@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pedidos e inventario · Krafteo Studio</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --k50:#FBF7F1;--k100:#F4EADB;--k200:#E8D4B6;--k300:#D9BA8E;--k400:#C8A27A;--k500:#B08559;--k600:#8B6B4A;--k700:#6B5139;--k800:#4A3828;--k900:#2A2018;
+  --leaf:#2D6A4F;--leaf-l:#D5EADD;--ink:#1F1B16;--cream:#FAF6EF;--sun:#F2B84B;
+  --red:#B42318;--red-l:#FDE8E6;
+  --shadow:0 10px 30px -12px rgba(74,56,40,.25);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Space Grotesk",system-ui,sans-serif;background:var(--cream);color:var(--ink);font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;letter-spacing:-.01em}
+.wrap{max-width:1400px;margin:0 auto;padding:0 20px}
+
+/* Cabecera */
+header{background:var(--k900);color:var(--cream)}
+header .wrap{display:flex;align-items:center;gap:16px;padding-top:14px;padding-bottom:14px;flex-wrap:wrap}
+.hlogo{display:block;height:60px;width:160px;object-fit:cover;object-position:center 52%;border-radius:10px;box-shadow:0 0 0 1px var(--k700)}
+.tag{font-size:12px;padding:3px 10px;border:1px solid var(--k600);border-radius:99px;color:var(--k200)}
+header .sp{flex:1}
+.today{font-size:13px;color:var(--k200)}
+.cut{height:2px;background-image:linear-gradient(90deg,var(--k400) 50%,transparent 0);background-size:12px 2px}
+
+/* Alerta de stock */
+#alerts:empty{display:none}
+#alerts{margin-top:18px;display:grid;gap:8px}
+.alert{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--red-l);border:2px solid var(--red);color:var(--red);padding:12px 16px;border-radius:12px;font-weight:600;animation:pulse 2s ease-in-out infinite}
+.alert .sp{flex:1}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(180,35,24,.12)}}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.kpi{background:#fff;border:1px solid var(--k200);border-radius:14px;padding:14px 16px}
+.kpi b{display:block;font-size:28px;line-height:1.1}
+.kpi small{color:var(--k700)}
+.kpi.warn b{color:var(--red)}
+
+/* Layout */
+.grid{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.grid > *{min-width:0}
+@media (max-width:1200px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--k200);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.card + .card{margin-top:18px}
+.card h2{font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+label{display:block;font-size:13px;font-weight:600;color:var(--k800);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--k200);border-radius:10px;background:var(--k50)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;background:var(--k800);color:var(--cream)}
+.btn:hover{background:var(--k900)}
+.btn.full{width:100%;margin-top:14px}
+.btn.ghost{background:transparent;color:var(--k800);border:1.5px solid var(--k300)}
+.btn.ghost:hover{background:var(--k100)}
+.btn.red{background:var(--red);color:#fff}
+.btn.sm{padding:6px 10px;font-size:13px}
+.preview{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--k100);font-size:13px;line-height:1.6}
+.preview.bad{background:var(--red-l);color:var(--red)}
+.muted{color:var(--k600);font-size:13px}
+
+/* Inventario */
+.stock{display:grid;gap:12px}
+.item .top{display:flex;justify-content:space-between;align-items:baseline;font-size:14px}
+.item .top b{font-size:20px}
+.bar{height:10px;border-radius:99px;background:var(--k100);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--leaf);border-radius:99px;transition:width .4s}
+.item.low .bar i{background:var(--red)}
+.item.low .top b{color:var(--red)}
+.item .min{font-size:12px;color:var(--k600)}
+.item.low .min{color:var(--red);font-weight:600}
+.restock{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-top:14px;align-items:end}
+.restock-btns{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.restock-msg{grid-column:1 / -1;font-size:13px;font-weight:600;color:var(--leaf)}
+.restock-msg:empty{display:none}
+.restock-msg.err{color:var(--red);background:var(--red-l);padding:8px 10px;border-radius:10px}
+.restock label{margin-top:0}
+
+/* Tablero */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input{max-width:260px}
+.toolbar select{max-width:200px}
+.board{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:4px}
+.col{background:var(--k100);border-radius:14px;padding:10px;min-height:260px}
+.col h3{font-size:14px;display:flex;align-items:center;gap:8px;padding:4px 4px 10px}
+.col h3 .n{margin-left:auto;background:#fff;border-radius:99px;padding:1px 9px;font-size:12px}
+.dot{width:10px;height:10px;border-radius:50%}
+.col.drag{outline:2px dashed var(--k500)}
+.order{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;border-left:5px solid var(--k400);cursor:grab;box-shadow:0 2px 6px -3px rgba(74,56,40,.3)}
+.order.late{border-left-color:var(--red)}
+.order.soon{border-left-color:var(--sun)}
+.order .id{font-size:12px;color:var(--k600);font-weight:600}
+.order .cli{font-weight:700;margin:2px 0}
+.order .meta{font-size:13px;color:var(--k700);line-height:1.5}
+.order .date{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--k100);margin-top:6px}
+.order.late .date{background:var(--red-l);color:var(--red);font-weight:600}
+.order.soon .date{background:#FCEFD2}
+.order .acts{display:flex;gap:6px;margin-top:10px}
+.order .acts .btn{flex:1}
+.order .x{background:none;border:0;color:var(--k500);cursor:pointer;float:right;font-size:16px;line-height:1}
+.order .x:hover{color:var(--red)}
+.order .x.ed{font-size:14px;margin-right:6px}
+.order .x.ed:hover{color:var(--k900)}
+.order.editing{outline:3px solid var(--sun);outline-offset:1px}
+#orderForm.editing{border:2px solid var(--sun)}
+#orderForm input[readonly]{background:var(--k100);color:var(--k700)}
+.cli-box{margin-top:10px;border:1.5px dashed var(--k300);border-radius:10px;padding:8px 12px}
+.cli-box summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--k800)}
+.cli-box[open] summary{margin-bottom:2px}
+.cli-box .row{row-gap:0}
+.cli-box .wide{grid-column:1 / -1}
+.order .money{font-weight:600;color:var(--k900)}
+.order .alb{display:inline-block;font-size:11px;font-weight:600;color:var(--leaf);margin-left:6px}
+.empty{font-size:13px;color:var(--k600);text-align:center;padding:20px 6px}
+
+/* Historial */
+.log{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;font-size:13px}
+.log li{padding:7px 0;border-bottom:1px dashed var(--k200);display:flex;gap:10px}
+.log time{color:var(--k600);white-space:nowrap}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 30px}
+
+/* Pantalla de acceso */
+.grain{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+#login{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background-color:var(--k200);overflow:auto}
+body.auth #login{display:none}
+body:not(.auth) header,body:not(.auth) main{display:none}
+.login-card{width:100%;max-width:420px;background:var(--cream);border-radius:20px;overflow:hidden;box-shadow:0 24px 48px -24px rgba(74,56,40,.45);border:1px solid var(--k300)}
+.login-card img{display:block;width:100%;aspect-ratio:16/8;object-fit:cover}
+.login-body{padding:22px 26px 26px}
+.login-body h1{font-size:28px;font-weight:700;color:var(--k900)}
+.login-body p{margin:4px 0 8px;color:var(--k700);font-size:14px}
+.login-err{min-height:20px;margin-top:10px;font-size:13px;font-weight:600;color:var(--red)}
+.login-card .cut{background-image:linear-gradient(90deg,var(--k500) 50%,transparent 0)}
+.logout{background:transparent;border:1px solid var(--k600);color:var(--k200);border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer}
+.logout:hover{background:var(--k800);color:var(--cream)}
+.htitle{font-weight:600;font-size:16px;color:var(--k100)}
+
+/* ---------- Albarán ---------- */
+#albaran{position:fixed;inset:0;z-index:30;background:rgba(42,32,24,.72);overflow:auto;padding:0 16px 40px}
+#albaran[hidden]{display:none}
+.alb-bar{position:sticky;top:0;z-index:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:820px;margin:0 auto 16px;padding:12px 16px;background:var(--k900);color:var(--cream);border-radius:0 0 14px 14px}
+.alb-bar .sp{flex:1}
+.alb-bar .btn.ghost{color:var(--cream);border-color:var(--k600)}
+.alb-bar .btn.ghost:hover{background:var(--k800)}
+.doc{max-width:820px;margin:0 auto;background:#fff;color:var(--ink);padding:44px 48px 36px;border-radius:4px;box-shadow:0 30px 60px -20px rgba(0,0,0,.5);font-size:12.5px;line-height:1.45}
+.doc h1,.doc h2,.doc h3{letter-spacing:0}
+.doc + .doc{margin-top:28px}
+.doc.pdf{max-width:none;margin:0;padding:0;box-shadow:none;border-radius:0}
+.doc.pdf .d-copy{margin-top:0}
+.btn:disabled{opacity:.6;cursor:wait}
+.d-copy{display:inline-block;margin:-20px 0 14px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border:1.5px solid}
+.d-copy.cli{color:var(--leaf);border-color:var(--leaf);background:var(--leaf-l)}
+.d-copy.emp{color:var(--k800);border-color:var(--k800);background:var(--k100)}
+.d-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.d-logo{width:190px;height:78px;object-fit:cover;object-position:center 52%;border-radius:6px}
+.d-emp{text-align:right;font-size:11.5px;color:var(--k800)}
+.d-emp b{font-size:14px;color:var(--ink)}
+.d-title{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:26px 0 14px;padding-bottom:10px;border-bottom:3px solid var(--k800)}
+.d-title h1{font-size:26px;font-weight:700;text-transform:uppercase}
+.d-title .no{font-size:15px;font-weight:700;color:var(--k700)}
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.d-box{border:1px solid var(--k300);border-radius:8px;padding:12px 14px}
+.d-box h3{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--k600);margin-bottom:6px}
+.d-box .nm{font-size:14px;font-weight:700}
+.d-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px}
+.d-kv dt{color:var(--k600)}
+.d-kv dd{margin:0;font-weight:600}
+.d-table{width:100%;border-collapse:collapse;margin:18px 0 6px}
+.d-table th{background:var(--k100);color:var(--k900);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:8px 10px;border-bottom:2px solid var(--k800)}
+.d-table td{padding:10px;border-bottom:1px solid var(--k200);vertical-align:top}
+.d-table .n{text-align:right;white-space:nowrap}
+.d-table small{color:var(--k600)}
+.d-sum{display:grid;grid-template-columns:1fr 280px;gap:18px;margin-top:14px;align-items:start}
+.d-iva{width:100%;border-collapse:collapse;font-size:11.5px}
+.d-iva th,.d-iva td{border:1px solid var(--k200);padding:6px 8px;text-align:right}
+.d-iva th{background:var(--k50);color:var(--k700);font-weight:600}
+.d-tot{border:1px solid var(--k300);border-radius:8px;overflow:hidden}
+.d-tot div{display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--k200)}
+.d-tot .big{background:var(--k800);color:var(--cream);font-size:16px;font-weight:700;border:0;padding:10px 12px}
+.d-obs{margin-top:16px;font-size:11.5px;color:var(--k800)}
+.d-sign{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.d-sign .d-box{min-height:120px;display:flex;flex-direction:column}
+.d-sign .line{margin-top:auto;border-top:1px solid var(--k400);padding-top:4px;font-size:10.5px;color:var(--k600)}
+.d-foot{margin-top:22px;padding-top:10px;border-top:1px dashed var(--k300);font-size:9.5px;color:var(--k600);text-align:center;line-height:1.5}
+@media (max-width:640px){
+  .doc{padding:24px 18px}
+  .d-head,.d-title{flex-direction:column;align-items:flex-start}
+  .d-emp{text-align:left}
+  .d-grid,.d-sum,.d-sign{grid-template-columns:1fr}
+}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff}
+  body > *:not(#albaran){display:none !important}
+  #albaran{position:static;background:none;padding:0;overflow:visible}
+  .alb-bar{display:none}
+  .doc{box-shadow:none;max-width:none;padding:0;border-radius:0;break-after:page;page-break-after:always}
+  .doc:last-child{break-after:auto;page-break-after:auto}
+  .doc + .doc{margin-top:0}
+  .d-copy{margin-top:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .d-tot .big,.d-table th,.d-iva th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .d-sign,.d-sum{break-inside:avoid}
+}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--k900);color:var(--cream);padding:12px 18px;border-radius:12px;transition:transform .3s;z-index:9;max-width:90vw}
+.toast.on{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<section id="login" class="grain">
+  <form class="login-card" id="loginForm" autocomplete="off">
+    <img src="logo-krafteo.webp" alt="Krafteo Studio · Taller de corte y creatividad">
+    <div class="cut"></div>
+    <div class="login-body">
+      <h1>Pedidos e inventario</h1>
+      <p>Acceso para el equipo del taller de Elda</p>
+      <label for="lUser">Usuario</label>
+      <input id="lUser" required autocomplete="username">
+      <label for="lPass">Contraseña</label>
+      <input id="lPass" type="password" required autocomplete="current-password">
+      <div class="login-err" id="loginErr" role="alert"></div>
+      <button class="btn full" type="submit" style="margin-top:6px">Entrar</button>
+    </div>
+  </form>
+</section>
+
+<header>
+  <div class="wrap">
+    <img class="hlogo" src="logo-krafteo.webp" alt="Krafteo Studio">
+    <span class="htitle">Pedidos e inventario</span>
+    <span class="tag">Uso interno · Elda</span>
+    <div class="sp"></div>
+    <div class="today" id="today"></div>
+    <button class="logout" id="logoutBtn">Cerrar sesión</button>
+  </div>
+  <div class="cut"></div>
+</header>
+
+<main class="wrap">
+  <div id="alerts"></div>
+  <section class="kpis" id="kpis"></section>
+
+  <div class="grid">
+    <!-- Columna izquierda -->
+    <aside>
+      <form class="card" id="orderForm" autocomplete="off">
+        <h2 id="formTitle">✂️ Nuevo pedido</h2>
+        <div class="row">
+          <div><label for="fId">Nº pedido</label><input id="fId" required></div>
+          <div><label for="fDate">Entrega</label><input id="fDate" type="date" required></div>
+        </div>
+        <label for="fClient">Cliente / razón social</label>
+        <input id="fClient" required placeholder="Ej. CEIP Miguel Hernández">
+        <details class="cli-box" id="cliBox">
+          <summary>Datos fiscales y de contacto del cliente</summary>
+          <div class="row" id="cliFields"></div>
+        </details>
+        <label for="fKit">Modelo de kit</label>
+        <select id="fKit"></select>
+        <div class="row">
+          <div><label for="fQty">Cantidad</label><input id="fQty" type="number" min="1" value="1" required></div>
+          <div><label for="fPrice">Precio ud. (sin IVA)</label><input id="fPrice" type="number" min="0" step="0.01" required></div>
+        </div>
+        <label for="fNotes">Notas (opcional)</label>
+        <input id="fNotes" placeholder="Personalización, colores…">
+        <div class="preview" id="preview"></div>
+        <button class="btn full" type="submit" id="formSubmit">Añadir al tablero</button>
+        <button class="btn ghost full" type="button" id="formCancel" hidden style="margin-top:8px">Cancelar edición</button>
+      </form>
+
+      <section class="card">
+        <h2>📦 Inventario</h2>
+        <div class="stock" id="stock"></div>
+        <form class="restock" id="restockForm">
+          <div><label for="rItem">Ajustar material</label><select id="rItem"></select></div>
+          <div><label for="rQty">Unid.</label><input id="rQty" type="number" min="1" value="10"></div>
+          <div class="restock-btns">
+            <button class="btn ghost" type="submit" data-sign="1">+ Añadir</button>
+            <button class="btn ghost" type="submit" data-sign="-1">− Quitar</button>
+          </div>
+          <div class="restock-msg" id="restockMsg" role="alert"></div>
+        </form>
+      </section>
+    </aside>
+
+    <!-- Tablero -->
+    <section>
+      <div class="card">
+        <h2>🗂️ Tablero de producción</h2>
+        <div class="toolbar">
+          <input id="search" type="search" placeholder="Buscar cliente o nº pedido…">
+          <select id="filterKit"><option value="">Todos los kits</option></select>
+          <span class="muted">Arrastra las tarjetas o usa los botones para cambiar el estado.</span>
+        </div>
+        <div class="board" id="board"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧾 Historial de movimientos</h2>
+        <ul class="log" id="log"></ul>
+      </div>
+
+      <div class="foot">
+        <button class="btn ghost sm" id="exportBtn">Descargar historial de pedidos (Excel)</button>
+        <button class="btn ghost sm" id="resetBtn">Restaurar datos de ejemplo</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- Albarán de entrega -->
+<div id="albaran" hidden role="dialog" aria-modal="true" aria-labelledby="albBarTitle">
+  <div class="alb-bar">
+    <b id="albBarTitle">Albarán de entrega</b>
+    <span class="sp"></span>
+    <button class="btn sm" id="albPdf" title="Descarga el ejemplar para la empresa en PDF">⬇️ Descargar PDF (empresa)</button>
+    <button class="btn sm" id="albPrint">🖨️ Imprimir (2 copias)</button>
+    <button class="btn ghost sm" id="albClose">Cerrar</button>
+  </div>
+  <div id="albDoc"></div>
+</div>
+
+<script>
+/* ---------- Configuración del taller ---------- */
+// price = precio por unidad SIN IVA (€). ref = referencia que sale en el albarán.
+const KITS = {
+  loro:      { name:'Disfraz de loro',          ref:'KIT-LOR', planchas:3,  tempera:2, price:24.90 },
+  mariposa:  { name:'Alas de mariposa',         ref:'KIT-MAR', planchas:2,  tempera:2, price:18.50 },
+  trex:      { name:'T-Rex articulado',         ref:'KIT-TRX', planchas:4,  tempera:1, price:32.00 },
+  arbol:     { name:'Árbol de las 4 estaciones',ref:'KIT-ARB', planchas:3,  tempera:3, price:27.50 },
+  atrapasol: { name:'Atrapasoles de luz',       ref:'KIT-SOL', planchas:1,  tempera:1, price:12.90 },
+  eventos:   { name:'Eventos',                  ref:'PRY-EVT', planchas:10, tempera:4, price:420.00 },
+  escenarios:{ name:'Escenarios',               ref:'PRY-ESC', planchas:15, tempera:6, price:860.00 }
+};
+const IVA = 0.21;
+// Datos de la empresa (ficticios) para los albaranes
+const EMPRESA = {
+  nombre:'Krafteo Studio S.L.', cif:'B-54839271',
+  dir:'C/ Jardines, 14 · Nave 3 · Pol. Ind. Campo Alto', cp:'03600', city:'Elda', prov:'Alicante',
+  tel:'965 38 21 47', email:'pedidos@krafteostudio.es', web:'krafteo-studio.vercel.app',
+  registro:'Inscrita en el Registro Mercantil de Alicante, Tomo 4.512, Folio 87, Hoja A-176.903',
+  pago:'Transferencia bancaria a 30 días · ES21 0081 1234 5600 0123 4567'
+};
+// Datos del cliente que se piden en el pedido
+const CLIENT_FIELDS = [
+  ['nif','NIF / CIF','B-03123456'], ['phone','Teléfono','600 000 000'],
+  ['addr','Dirección','C/ Mayor, 1'], ['cp','C.P.','03600'],
+  ['city','Población','Elda'], ['prov','Provincia','Alicante'],
+  ['email','Email','cliente@correo.es'], ['contact','Persona de contacto','Nombre y apellidos']
+];
+const MATERIALS = {
+  planchas: { name:'Planchas cartón kraft', unit:'planchas', min:20, max:200 },
+  tempera:  { name:'Botes de témpera',      unit:'botes',    min:10, max:80 }
+};
+const STATES = [
+  { id:'pendiente',  name:'Pendiente de corte',        action:'Pendiente', color:'#C8A27A' },
+  { id:'maquina',    name:'En máquina láser/troquel',  action:'A máquina', color:'#F2B84B' },
+  { id:'empaquetado',name:'Empaquetado',               action:'Empaquetar', color:'#40916C' },
+  { id:'entregado',  name:'Entregado',                 action:'Entregar',  color:'#4A3828' }
+];
+const SUPPLIER_EMAIL = 'compras@proveedor-carton.es'; // cambiar por el del proveedor real
+const KEY = 'krafteo-taller-v1';
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso = d => d.toISOString().slice(0,10);
+const addDays = n => { const d = new Date(); d.setDate(d.getDate()+n); return iso(d); };
+const fmtDate = s => new Date(s+'T00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
+const daysTo = s => Math.round((new Date(s+'T00:00') - new Date(iso(new Date())+'T00:00')) / 864e5);
+const now = () => new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+// Pedidos de ejemplo (datos ficticios). d = días hasta la entrega.
+const SEED_ORDERS = [
+  { id:'KR-1041', client:'CEIP Miguel Hernández', kit:'arbol', qty:6, d:-1, status:'maquina', notes:'Aula de 5 años',
+    cli:{ nif:'Q-5368014-H', phone:'965 39 87 10', addr:'Av. de Ronda, 23', cp:'03600', city:'Elda', prov:'Alicante', email:'secretaria@ceipmhernandez-ficticio.es', contact:'Rosa Albert (jefa de estudios)' } },
+  { id:'KR-1042', client:'Laura Gómez Sánchez', kit:'loro', qty:1, d:2, status:'pendiente', notes:'Talla 4-6 años',
+    cli:{ nif:'48123456-K', phone:'622 41 08 93', addr:'C/ Antonio Maura, 7, 2º B', cp:'03600', city:'Elda', prov:'Alicante', email:'laura.gomez@correo-ficticio.es', contact:'Laura Gómez Sánchez' } },
+  { id:'KR-1043', client:'Ludoteca El Trébol S.L.', kit:'trex', qty:4, d:5, status:'pendiente', notes:'',
+    cli:{ nif:'B-03984512', phone:'966 95 12 40', addr:'C/ San Roque, 41, local 2', cp:'03610', city:'Petrer', prov:'Alicante', email:'hola@ludotecaeltrebol-ficticio.es', contact:'Javier Poveda' } },
+  { id:'KR-1044', client:'Calzados Petrer S.A.', kit:'mariposa', qty:8, d:1, status:'empaquetado', notes:'Montaje en escaparate',
+    cli:{ nif:'A-03556271', phone:'965 37 44 08', addr:'Av. Hispanidad, 112', cp:'03610', city:'Petrer', prov:'Alicante', email:'tienda@calzadospetrer-ficticio.es', contact:'Elena Maestre (visual merchandising)' } },
+  { id:'KR-1045', client:'Marta Ruiz Navarro', kit:'atrapasol', qty:2, d:-3, status:'entregado', notes:'',
+    cli:{ nif:'74362915-D', phone:'655 87 20 31', addr:'C/ Jardines, 52, 4º A', cp:'03600', city:'Elda', prov:'Alicante', email:'marta.ruiz@correo-ficticio.es', contact:'Marta Ruiz Navarro' } },
+  { id:'KR-1046', client:'AMPA Colegio Padre Manjón', kit:'loro', qty:5, d:9, status:'pendiente', notes:'Carnaval',
+    cli:{ nif:'G-53871204', phone:'610 22 75 48', addr:'C/ Padre Manjón, 2', cp:'03600', city:'Elda', prov:'Alicante', email:'ampa.padremanjon@correo-ficticio.es', contact:'Sergio Tortosa (tesorero)' } },
+  { id:'KR-1047', client:'Pablo Navarro Gil', kit:'arbol', qty:1, d:4, status:'maquina', notes:'',
+    cli:{ nif:'20481937-M', phone:'689 14 53 72', addr:'Pl. Castelar, 5, 1º', cp:'03600', city:'Elda', prov:'Alicante', email:'pablo.navarro@correo-ficticio.es', contact:'Pablo Navarro Gil' } }
+];
+
+function seed(){
+  return {
+    next: 1048,
+    stock: { planchas: 64, tempera: 22 },
+    nextAlb: 1,
+    orders: SEED_ORDERS.map(o => ({ ...o, cli:{ ...o.cli }, date: addDays(o.d), price: KITS[o.kit].price })),
+    log: [{ t: now(), m: 'Datos de ejemplo cargados' }]
+  };
+}
+let db;
+try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(); }
+// Completa datos guardados con versiones anteriores de la app (sin precio ni datos de cliente)
+(function migrate(){
+  db.nextAlb = db.nextAlb || 1;
+  db.orders.forEach(o => {
+    const s = SEED_ORDERS.find(x => x.id === o.id);
+    if (o.price == null) o.price = KITS[o.kit].price;
+    if (!o.cli) o.cli = s ? { ...s.cli } : {};  });
+})();
+const eur = v => v.toLocaleString('es-ES', { style:'currency', currency:'EUR' });
+const round2 = v => Math.round(v*100)/100;
+const totals = o => { const base = round2(o.price*o.qty), iva = round2(base*IVA); return { base, iva, total: round2(base+iva) }; };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} };
+const log = m => { db.log.unshift({ t: now(), m }); db.log = db.log.slice(0,80); };
+const isLow = (k, v = db.stock[k]) => v <= MATERIALS[k].min; // en rojo al llegar al mínimo
+const need = (kit, qty) => ({ planchas: KITS[kit].planchas*qty, tempera: KITS[kit].tempera*qty });
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),2600); }
+
+/* ---------- Render ---------- */
+function renderAlerts(){
+  const low = Object.entries(MATERIALS).filter(([k,m]) => isLow(k));
+  $('#alerts').innerHTML = low.map(([k,m]) => {
+    const qty = Math.max(m.max - db.stock[k], m.min*2);
+    const subject = encodeURIComponent(`Pedido de reposición Krafteo – ${m.name}`);
+    const body = encodeURIComponent(`Hola,\n\nNecesitamos reponer ${qty} ${m.unit} de ${m.name.toLowerCase()} para el taller de Krafteo en Elda.\nStock actual: ${db.stock[k]} ${m.unit}.\n\n¿Nos confirmáis plazo de entrega?\n\nGracias,\nKrafteo Studio`);
+    const label = k==='planchas' ? 'Stock bajo: pedir planchas de cartón a proveedor' : 'Stock bajo: pedir botes de témpera a proveedor';
+    return `<div class="alert">⚠️ <span>${label} <small>(quedan ${db.stock[k]} ${m.unit}, mínimo ${m.min})</small></span><span class="sp"></span>
+      <a class="btn red sm" style="text-decoration:none" href="mailto:${SUPPLIER_EMAIL}?subject=${subject}&body=${body}">Generar pedido de compra (${qty})</a></div>`;
+  }).join('');
+}
+
+function renderKpis(){
+  const active = db.orders.filter(o => o.status!=='entregado');
+  const late = active.filter(o => daysTo(o.date) < 0).length;
+  const week = active.filter(o => { const d=daysTo(o.date); return d>=0 && d<=7; }).length;
+  const kits = active.reduce((s,o) => s+o.qty, 0);
+  $('#kpis').innerHTML = `
+    <div class="kpi"><b>${active.length}</b><small>Pedidos en curso</small></div>
+    <div class="kpi"><b>${kits}</b><small>Kits por fabricar/entregar</small></div>
+    <div class="kpi"><b>${week}</b><small>Entregas en 7 días</small></div>
+    <div class="kpi ${late?'warn':''}"><b>${late}</b><small>Pedidos con retraso</small></div>
+    <div class="kpi ${isLow('planchas')?'warn':''}"><b>${db.stock.planchas}</b><small>Planchas disponibles</small></div>`;
+}
+
+function renderStock(){
+  $('#stock').innerHTML = Object.entries(MATERIALS).map(([k,m]) => {
+    const v = db.stock[k], pct = Math.min(100, v/m.max*100);
+    return `<div class="item ${isLow(k)?'low':''}">
+      <div class="top"><span>${m.name}</span><b>${v}</b></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="min">Mínimo de seguridad: ${m.min} ${m.unit}</div></div>`;
+  }).join('');
+}
+
+function cardHtml(o){
+  const d = daysTo(o.date), done = o.status==='entregado';
+  const cls = done ? '' : d<0 ? 'late' : d<=2 ? 'soon' : '';
+  const when = done ? `Entregado · ${fmtDate(o.date)}` : d<0 ? `Retraso ${-d} día${d===-1?'':'s'}` : d===0 ? 'Entrega HOY' : `Entrega ${fmtDate(o.date)} (${d} d)`;
+  const i = STATES.findIndex(s => s.id===o.status);
+  const n = need(o.kit,o.qty);
+  return `<article class="order ${cls}${o.id===editingId?' editing':''}" draggable="true" data-id="${o.id}">
+    <button class="x" title="Eliminar pedido" data-del="${o.id}">×</button>
+    <button class="x ed" title="Editar pedido" data-edit="${o.id}">✎</button>
+    <div class="id">${esc(o.id)}</div>
+    <div class="cli">${esc(o.client)}</div>
+    <div class="meta">${o.qty} × ${esc(KITS[o.kit].name)}<br>${n.planchas} planchas · ${n.tempera} botes${o.notes?`<br><em>${esc(o.notes)}</em>`:''}
+      <br><span class="money">${eur(totals(o).total)}</span> <small>(IVA incl.)</small></div>
+    <span class="date">${when}</span>${o.albNo ? `<span class="alb">✓ ${esc(o.albNo)}</span>` : ''}
+    ${done ? `<div class="acts"><button class="btn sm" data-alb="${o.id}">🧾 Albarán de entrega</button></div>` : ''}
+    <div class="acts">
+      ${i>0 ? `<button class="btn ghost sm" data-move="${o.id}" data-dir="-1">←</button>` : ''}
+      ${i<STATES.length-1 ? `<button class="btn sm" data-move="${o.id}" data-dir="1">${STATES[i+1].action} →</button>` : ''}
+    </div></article>`;
+}
+
+function renderBoard(){
+  const q = $('#search').value.trim().toLowerCase(), fk = $('#filterKit').value;
+  const list = db.orders.filter(o => (!fk || o.kit===fk) && (!q || (o.client+' '+o.id).toLowerCase().includes(q)))
+                        .sort((a,b) => a.date.localeCompare(b.date));
+  $('#board').innerHTML = STATES.map(s => {
+    const items = list.filter(o => o.status===s.id);
+    return `<div class="col" data-state="${s.id}">
+      <h3><span class="dot" style="background:${s.color}"></span>${s.name}<span class="n">${items.length}</span></h3>
+      ${items.map(cardHtml).join('') || '<div class="empty">Sin pedidos</div>'}</div>`;
+  }).join('');
+}
+
+function renderLog(){
+  $('#log').innerHTML = db.log.map(l => `<li><time>${l.t}</time><span>${esc(l.m)}</span></li>`).join('');
+}
+
+function renderPreview(){
+  const kit = $('#fKit').value, qty = Math.max(0, +$('#fQty').value || 0);
+  const n = need(kit, qty), old = editingOrder() ? need(editingOrder().kit, editingOrder().qty) : { planchas:0, tempera:0 };
+  const dp = n.planchas - old.planchas, dt = n.tempera - old.tempera;
+  const p = db.stock.planchas - dp, t = db.stock.tempera - dt;
+  const bad = p < 0 || t < 0;
+  const el = $('#preview');
+  el.className = 'preview' + (bad ? ' bad' : '');
+  const sign = v => v > 0 ? `−${v}` : v < 0 ? `+${-v}` : '0';
+  const first = editingOrder()
+    ? `Cambio de material: <b>${sign(dp)}</b> planchas · <b>${sign(dt)}</b> botes${dp||dt ? '' : ' (sin cambios)'}<br>`
+    : `Consumo: <b>${n.planchas}</b> planchas · <b>${n.tempera}</b> botes de témpera<br>`;
+  const tt = totals({ price: formPrice(), qty });
+  el.innerHTML = `Importe: <b>${eur(tt.base)}</b> + IVA ${IVA*100}% ${eur(tt.iva)} = <b>${eur(tt.total)}</b><br>${first}
+    Quedarán: <b>${p}</b> planchas · <b>${t}</b> botes${bad ? '<br><b>No hay material suficiente para este pedido.</b>' : (p <= MATERIALS.planchas.min ? '<br>⚠️ Llegará al mínimo de planchas.' : '')}`;
+}
+
+function render(){ renderAlerts(); renderKpis(); renderStock(); renderBoard(); renderLog(); renderPreview(); save(); }
+
+/* ---------- Acciones ---------- */
+function moveOrder(id, toState){
+  const o = db.orders.find(o => o.id===id); if (!o || o.status===toState) return;
+  const from = STATES.find(s => s.id===o.status).name, to = STATES.find(s => s.id===toState).name;
+  o.status = toState;
+  log(`${o.id} (${o.client}): ${from} → ${to}`);
+  render(); toast(`${o.id} → ${to}`);
+}
+
+function deleteOrder(id){
+  const o = db.orders.find(o => o.id===id); if (!o) return;
+  const restore = o.status==='pendiente';
+  if (!confirm(`¿Eliminar ${o.id} de ${o.client}?${restore ? '\nEl material reservado volverá al inventario.' : ''}`)) return;
+  if (restore){ const n = need(o.kit,o.qty); db.stock.planchas += n.planchas; db.stock.tempera += n.tempera; }
+  db.orders = db.orders.filter(x => x !== o);
+  if (editingId === o.id) stopEdit();
+  log(`${o.id} eliminado${restore ? ' (material devuelto al stock)' : ''}`);
+  render();
+}
+
+/* Datos del cliente en el formulario */
+const readCli = () => Object.fromEntries(CLIENT_FIELDS.map(([k]) => [k, $('#c_'+k).value.trim()]));
+const fillCli = cli => CLIENT_FIELDS.forEach(([k]) => { $('#c_'+k).value = (cli && cli[k]) || ''; });
+const formPrice = () => { const v = parseFloat($('#fPrice').value); return isNaN(v) ? 0 : round2(v); };
+
+/* Edición de pedidos */
+let editingId = null;
+const editingOrder = () => editingId && db.orders.find(o => o.id===editingId);
+
+function startEdit(id){
+  const o = db.orders.find(o => o.id===id); if (!o) return;
+  editingId = id;
+  $('#fId').value = o.id; $('#fId').readOnly = true;
+  $('#fDate').value = o.date; $('#fClient').value = o.client;
+  $('#fKit').value = o.kit; $('#fQty').value = o.qty; $('#fNotes').value = o.notes || '';
+  $('#fPrice').value = o.price.toFixed(2); fillCli(o.cli); $('#cliBox').open = true;
+  $('#formTitle').textContent = `✏️ Editar pedido ${o.id}`;
+  $('#formSubmit').textContent = 'Guardar cambios';
+  $('#formCancel').hidden = false;
+  $('#orderForm').classList.add('editing');
+  renderBoard(); renderPreview();
+  $('#orderForm').scrollIntoView({ behavior:'smooth', block:'start' });
+  $('#fDate').focus();
+}
+
+function stopEdit(){
+  editingId = null;
+  $('#orderForm').reset(); $('#fId').readOnly = false;
+  $('#formTitle').textContent = '✂️ Nuevo pedido';
+  $('#formSubmit').textContent = 'Añadir al tablero';
+  $('#formCancel').hidden = true;
+  $('#orderForm').classList.remove('editing');
+  $('#cliBox').open = false;
+  fillDefaults(); renderBoard(); renderPreview();
+}
+$('#formCancel').addEventListener('click', stopEdit);
+
+function saveEdit(){
+  const o = editingOrder(); if (!o) return stopEdit();
+  const kit = $('#fKit').value, qty = +$('#fQty').value, date = $('#fDate').value;
+  const client = $('#fClient').value.trim(), notes = $('#fNotes').value.trim();
+  const price = formPrice(), cli = readCli();
+  const oldN = need(o.kit, o.qty), newN = need(kit, qty);
+  const dp = newN.planchas - oldN.planchas, dt = newN.tempera - oldN.tempera;
+  if (dp > db.stock.planchas || dt > db.stock.tempera) return toast('Material insuficiente para este cambio: registra una entrada de stock primero');
+  const changes = [];
+  if (date !== o.date) changes.push(`entrega ${fmtDate(o.date)} → ${fmtDate(date)}`);
+  if (client !== o.client) changes.push(`cliente «${client}»`);
+  if (kit !== o.kit) changes.push(`kit ${KITS[o.kit].name} → ${KITS[kit].name}`);
+  if (qty !== o.qty) changes.push(`cantidad ${o.qty} → ${qty}`);
+  if (price !== o.price) changes.push(`precio ${eur(o.price)} → ${eur(price)}`);
+  if (CLIENT_FIELDS.some(([k]) => (cli[k]||'') !== ((o.cli||{})[k]||''))) changes.push('datos del cliente');
+  if (notes !== (o.notes || '')) changes.push('notas');
+  if (!changes.length){ toast('No has cambiado nada'); return stopEdit(); }
+  db.stock.planchas -= dp; db.stock.tempera -= dt;
+  Object.assign(o, { client, kit, qty, date, notes, price, cli });
+  const mat = dp || dt ? ` (material: ${dp>0?'−':'+'}${Math.abs(dp)} planchas, ${dt>0?'−':'+'}${Math.abs(dt)} botes)` : '';
+  log(`${o.id} editado: ${changes.join(', ')}${mat}`);
+  const id = o.id; stopEdit(); render();
+  toast(`Pedido ${id} actualizado`);
+}
+
+$('#orderForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (editingId) return saveEdit();
+  const id = $('#fId').value.trim(), kit = $('#fKit').value, qty = +$('#fQty').value;
+  if (db.orders.some(o => o.id.toLowerCase()===id.toLowerCase())) return toast('Ese nº de pedido ya existe');
+  const n = need(kit, qty);
+  if (n.planchas > db.stock.planchas || n.tempera > db.stock.tempera) return toast('Material insuficiente: registra una entrada de stock primero');
+  db.stock.planchas -= n.planchas; db.stock.tempera -= n.tempera;
+  db.orders.push({ id, client: $('#fClient').value.trim(), kit, qty, date: $('#fDate').value, status:'pendiente', notes: $('#fNotes').value.trim(), price: formPrice(), cli: readCli() });
+  log(`Nuevo pedido ${id}: ${qty} × ${KITS[kit].name} para ${$('#fClient').value.trim()} (−${n.planchas} planchas, −${n.tempera} botes)`);
+  if (/^KR-\d+$/i.test(id)) db.next = Math.max(db.next, +id.split('-')[1] + 1);
+  e.target.reset(); $('#cliBox').open = false; fillDefaults(); render();
+  toast(`Pedido ${id} añadido a «Pendiente de corte»`);
+});
+
+$('#restockForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const k = $('#rItem').value, q = +$('#rQty').value, m = MATERIALS[k], msg = $('#restockMsg');
+  const say = (text, err) => { msg.textContent = text; msg.className = 'restock-msg' + (err ? ' err' : ''); };
+  if (!(q >= 1)) return say('Escribe en «Unid.» una cantidad mayor que 0.', true);
+  if (e.submitter && e.submitter.dataset.sign === '-1'){
+    if (q > db.stock[k]) return say(`No se pueden quitar ${q} ${m.unit}: solo quedan ${db.stock[k]}. Baja la cantidad en «Unid.».`, true);
+    db.stock[k] -= q; log(`Salida/ajuste de stock: −${q} ${m.unit} (${m.name})`);
+    say(`−${q} ${m.unit}. Ahora quedan ${db.stock[k]}.`);
+  } else {
+    db.stock[k] += q; log(`Entrada de proveedor: +${q} ${m.unit} (${m.name})`);
+    say(`+${q} ${m.unit}. Ahora hay ${db.stock[k]}.`);
+  }
+  render();
+});
+
+$('#board').addEventListener('click', e => {
+  const m = e.target.closest('[data-move]'), d = e.target.closest('[data-del]'), ed = e.target.closest('[data-edit]');
+  if (ed) return startEdit(ed.dataset.edit);
+  const al = e.target.closest('[data-alb]');
+  if (al) return openAlbaran(al.dataset.alb);
+  if (m){ const o = db.orders.find(o => o.id===m.dataset.move); const i = STATES.findIndex(s => s.id===o.status) + +m.dataset.dir; moveOrder(o.id, STATES[i].id); }
+  if (d) deleteOrder(d.dataset.del);
+});
+// Arrastrar y soltar
+$('#board').addEventListener('dragstart', e => { const c = e.target.closest('.order'); if (c) e.dataTransfer.setData('text/plain', c.dataset.id); });
+$('#board').addEventListener('dragover', e => { const c = e.target.closest('.col'); if (c){ e.preventDefault(); document.querySelectorAll('.col').forEach(x => x.classList.toggle('drag', x===c)); } });
+$('#board').addEventListener('dragleave', e => { if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) document.querySelectorAll('.col').forEach(x => x.classList.remove('drag')); });
+$('#board').addEventListener('drop', e => { const c = e.target.closest('.col'); document.querySelectorAll('.col').forEach(x => x.classList.remove('drag')); if (c){ e.preventDefault(); moveOrder(e.dataTransfer.getData('text/plain'), c.dataset.state); } });
+
+['#search','#filterKit'].forEach(s => $(s).addEventListener('input', renderBoard));
+['#fKit','#fQty','#fPrice'].forEach(s => $(s).addEventListener('input', renderPreview));
+// Al cambiar de kit se propone su precio de tarifa (se puede modificar)
+$('#fKit').addEventListener('change', () => { $('#fPrice').value = KITS[$('#fKit').value].price.toFixed(2); renderPreview(); });
+
+$('#exportBtn').addEventListener('click', () => {
+  const num = v => v.toFixed(2).replace('.', ',');
+  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Base imponible','IVA','Total','Entrega','Estado','Albarán','Planchas','Témperas','Notas']]
+    .concat(db.orders.map(o => { const n = need(o.kit,o.qty), t = totals(o), c = o.cli || {};
+      return [o.id,o.client,c.nif||'',c.phone||'',c.email||'',c.addr||'',c.cp||'',c.city||'',c.prov||'',KITS[o.kit].name,o.qty,num(o.price),num(t.base),num(t.iva),num(t.total),o.date,STATES.find(s=>s.id===o.status).name,o.albNo||'',n.planchas,n.tempera,o.notes]; }));
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `pedidos-krafteo-${iso(new Date())}.csv`; a.click();
+});
+$('#resetBtn').addEventListener('click', () => { if (confirm('Se borrarán todos los cambios y se cargarán los datos de ejemplo.')){ db = seed(); stopEdit(); render(); } });
+
+/* ---------- Acceso ----------
+   Usuarios del taller. Es un acceso de demostración: el control se hace en el
+   navegador, así que no sustituye a un login real con servidor. */
+const USERS = [
+  { user:'taller',  pass:'krafteo2026', name:'Equipo de taller' },
+  { user:'melani',  pass:'elda2026',    name:'Melani' }
+];
+const AUTH_KEY = 'krafteo-taller-auth';
+let currentUser = null;
+function setAuth(user){
+  currentUser = user;
+  document.body.classList.toggle('auth', !!user);
+  try { user ? sessionStorage.setItem(AUTH_KEY, user) : sessionStorage.removeItem(AUTH_KEY); } catch {}
+}
+try { const u = sessionStorage.getItem(AUTH_KEY); if (u) setAuth(USERS.some(x => x.user===u) ? u : 'taller'); } catch {}
+if (!document.body.classList.contains('auth')) $('#lUser').focus();
+$('#loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const u = $('#lUser').value.trim().toLowerCase(), p = $('#lPass').value;
+  if (USERS.some(x => x.user===u && x.pass===p)){
+    $('#loginErr').textContent = ''; e.target.reset(); setAuth(u);
+    log(`Inicio de sesión: ${u}`); render();
+  } else {
+    $('#loginErr').textContent = 'Usuario o contraseña incorrectos.';
+    $('#lPass').value = ''; $('#lPass').focus();
+  }
+});
+$('#logoutBtn').addEventListener('click', () => { closeAlbaran(); setAuth(null); $('#lUser').focus(); });
+
+/* ---------- Albarán de entrega ---------- */
+const fmtLong = s => new Date(s+'T00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+const userName = u => (USERS.find(x => x.user===u) || {}).name || u || '—';
+const val = v => v ? esc(v) : '<span style="color:var(--k400)">—</span>';
+
+let albOrderId = null;
+function openAlbaran(id){
+  const o = db.orders.find(o => o.id===id); if (!o) return;
+  albOrderId = id;
+  if (o.status !== 'entregado') return toast('El albarán solo se genera para pedidos entregados');
+  if (!o.albNo){
+    // Primera vez: se asigna número correlativo y se guarda en el pedido
+    o.albNo = `ALB-${new Date().getFullYear()}-${String(db.nextAlb++).padStart(4,'0')}`;
+    o.albDate = iso(new Date());
+    o.albUser = currentUser;
+    log(`Albarán ${o.albNo} generado para ${o.id} (${o.client}) por ${userName(currentUser)}`);
+    render();
+  }
+  const k = KITS[o.kit], t = totals(o), c = o.cli || {};
+  const cityLine = [c.cp, c.city].filter(Boolean).join(' ') + (c.prov ? ` (${c.prov})` : '');
+  $('#albBarTitle').textContent = `Albarán ${o.albNo} · ${o.client}`;
+  const docHtml = (copy, cls) => `<article class="doc">
+    <div class="d-copy ${cls}">${copy}</div>
+    <div class="d-head">
+      <img class="d-logo" src="logo-krafteo.webp" alt="Krafteo Studio">
+      <div class="d-emp"><b>${esc(EMPRESA.nombre)}</b><br>CIF ${esc(EMPRESA.cif)}<br>${esc(EMPRESA.dir)}<br>
+        ${esc(EMPRESA.cp)} ${esc(EMPRESA.city)} (${esc(EMPRESA.prov)})<br>Tel. ${esc(EMPRESA.tel)} · ${esc(EMPRESA.email)}<br>${esc(EMPRESA.web)}</div>
+    </div>
+
+    <div class="d-title"><h1>Albarán de entrega</h1><span class="no">Nº ${esc(o.albNo)}</span></div>
+
+    <div class="d-grid">
+      <section class="d-box">
+        <h3>Cliente</h3>
+        <div class="nm">${esc(o.client)}</div>
+        <dl class="d-kv">
+          <dt>NIF/CIF</dt><dd>${val(c.nif)}</dd>
+          <dt>Dirección</dt><dd>${val(c.addr)}</dd>
+          <dt>Población</dt><dd>${val(cityLine.trim())}</dd>
+          <dt>Teléfono</dt><dd>${val(c.phone)}</dd>
+          <dt>Email</dt><dd>${val(c.email)}</dd>
+          <dt>Contacto</dt><dd>${val(c.contact)}</dd>
+        </dl>
+      </section>
+      <section class="d-box">
+        <h3>Datos de la entrega</h3>
+        <dl class="d-kv">
+          <dt>Nº albarán</dt><dd>${esc(o.albNo)}</dd>
+          <dt>Fecha albarán</dt><dd>${fmtLong(o.albDate)}</dd>
+          <dt>Nº pedido</dt><dd>${esc(o.id)}</dd>
+          <dt>Fecha entrega</dt><dd>${fmtLong(o.date)}</dd>
+          <dt>Emitido por</dt><dd>${esc(userName(o.albUser))}</dd>
+          <dt>Forma de pago</dt><dd>Transferencia 30 días</dd>
+        </dl>
+      </section>
+    </div>
+
+    <table class="d-table">
+      <thead><tr><th>Ref.</th><th>Descripción</th><th class="n">Cant.</th><th class="n">Precio ud.</th><th class="n">Importe</th></tr></thead>
+      <tbody><tr>
+        <td>${esc(k.ref)}</td>
+        <td><b>${esc(k.name)}</b><br><small>Fabricado en cartón kraft ondulado · Taller Krafteo, Elda${o.notes ? ` · ${esc(o.notes)}` : ''}</small></td>
+        <td class="n">${o.qty}</td>
+        <td class="n">${eur(o.price)}</td>
+        <td class="n"><b>${eur(t.base)}</b></td>
+      </tr></tbody>
+    </table>
+
+    <div class="d-sum">
+      <div>
+        <table class="d-iva">
+          <thead><tr><th>Base imponible</th><th>Tipo IVA</th><th>Cuota IVA</th><th>Total</th></tr></thead>
+          <tbody><tr><td>${eur(t.base)}</td><td>${IVA*100} %</td><td>${eur(t.iva)}</td><td>${eur(t.total)}</td></tr></tbody>
+        </table>
+        <p class="d-obs"><b>Pago:</b> ${esc(EMPRESA.pago)}<br>
+          <b>Observaciones:</b> la mercancía se entrega en perfecto estado. Cualquier incidencia debe comunicarse en un plazo de 48 h. Este albarán no sustituye a la factura.</p>
+      </div>
+      <div class="d-tot">
+        <div><span>Base imponible</span><b>${eur(t.base)}</b></div>
+        <div><span>IVA (${IVA*100} %)</span><b>${eur(t.iva)}</b></div>
+        <div class="big"><span>TOTAL</span><span>${eur(t.total)}</span></div>
+      </div>
+    </div>
+
+    <div class="d-sign">
+      <section class="d-box"><h3>Entregado por</h3>${esc(EMPRESA.nombre)}<br>${esc(userName(o.albUser))}
+        <div class="line">Firma y sello</div></section>
+      <section class="d-box"><h3>Recibí conforme</h3>Nombre: ${c.contact ? esc(c.contact) : ''}<br>DNI:
+        <div class="line">Fecha y firma del cliente</div></section>
+    </div>
+
+    <div class="d-foot">${esc(EMPRESA.nombre)} · CIF ${esc(EMPRESA.cif)} · ${esc(EMPRESA.registro)}<br>
+      De acuerdo con el RGPD (UE) 2016/679, sus datos se tratan para gestionar el pedido y no se cederán a terceros. Puede ejercer sus derechos en ${esc(EMPRESA.email)}.<br>
+      <i>Documento de ejemplo para un proyecto académico: empresa y datos ficticios.</i></div></article>`;
+  // Dos ejemplares: uno para el cliente y otro para el archivo de la empresa (cada uno en su página al imprimir)
+  $('#albDoc').innerHTML = docHtml('Ejemplar para el cliente', 'cli') + docHtml('Ejemplar para la empresa', 'emp');
+  $('#albaran').hidden = false;
+  $('#albaran').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+function closeAlbaran(){ $('#albaran').hidden = true; document.body.style.overflow = ''; }
+$('#albClose').addEventListener('click', closeAlbaran);
+$('#albPrint').addEventListener('click', () => window.print());
+
+/* Descarga directa en PDF del ejemplar para la empresa (librería html2pdf.js, se carga al primer uso) */
+const HTML2PDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+function loadHtml2pdf(){
+  if (window.html2pdf) return Promise.resolve();
+  return new Promise((ok, fail) => {
+    const s = document.createElement('script');
+    s.src = HTML2PDF_URL; s.onload = ok;
+    s.onerror = () => fail(new Error('No se pudo cargar el generador de PDF (¿sin conexión a internet?)'));
+    document.head.appendChild(s);
+  });
+}
+// Prepara el PDF del ejemplar de empresa. Devuelve { worker, done } (done limpia el elemento temporal).
+async function buildEmpresaPdf(){
+  await loadHtml2pdf();
+  const o = db.orders.find(o => o.id===albOrderId);
+  const src = $('#albDoc .doc:last-child');
+  const wrap = document.createElement('div');
+  // Copia temporal en la esquina, oculta detrás de la app (fuera de pantalla html2canvas la recorta)
+  wrap.style.cssText = 'position:fixed;left:0;top:0;width:780px;background:#fff;z-index:-1;pointer-events:none';
+  const clone = src.cloneNode(true); clone.classList.add('pdf');
+  wrap.appendChild(clone); document.body.appendChild(wrap);
+  const worker = html2pdf().set({
+    margin: [12, 12, 12, 12],
+    filename: `${o.albNo}_empresa_${o.id}.pdf`,
+    image: { type:'jpeg', quality:0.96 },
+    html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+    pagebreak: { mode:['css','legacy'] }
+  }).from(clone);
+  return { worker, done: () => wrap.remove(), o };
+}
+$('#albPdf').addEventListener('click', async () => {
+  const btn = $('#albPdf'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Generando PDF…';
+  let job;
+  try {
+    job = await buildEmpresaPdf();
+    await job.worker.save();
+    log(`PDF del albarán ${job.o.albNo} (ejemplar empresa) descargado por ${userName(currentUser)}`);
+    save(); renderLog();
+    toast(`Descargado ${job.o.albNo}_empresa_${job.o.id}.pdf`);
+  } catch (err) {
+    toast(err.message || 'No se pudo generar el PDF');
+  } finally {
+    if (job) job.done();
+    btn.disabled = false; btn.textContent = label;
+  }
+});
+$('#albaran').addEventListener('click', e => { if (e.target.id === 'albaran') closeAlbaran(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#albaran').hidden) closeAlbaran(); });
+
+/* ---------- Inicio ---------- */
+function fillDefaults(){
+  $('#fId').value = 'KR-' + db.next;
+  $('#fDate').value = addDays(7);
+  $('#fQty').value = 1;
+  $('#fPrice').value = KITS[$('#fKit').value].price.toFixed(2);
+}
+$('#cliFields').innerHTML = CLIENT_FIELDS.map(([k,label,ph]) =>
+  `<div class="${['addr','email','contact'].includes(k)?'wide':''}"><label for="c_${k}">${label}</label><input id="c_${k}" placeholder="${ph}"${k==='email'?' type="email"':''}></div>`).join('');
+$('#today').textContent = new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const kitOpts = Object.entries(KITS).map(([k,v]) => `<option value="${k}">${v.name}</option>`).join('');
+$('#fKit').innerHTML = kitOpts;
+$('#filterKit').innerHTML += kitOpts;
+$('#rItem').innerHTML = Object.entries(MATERIALS).map(([k,m]) => `<option value="${k}">${m.name}</option>`).join('');
+fillDefaults();
+render();
+</script>
+</body>
+</html>
