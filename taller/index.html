@@ -111,16 +111,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);ba
 #orderForm.editing{border:2px solid var(--sun)}
 #orderForm input[readonly]{background:var(--k100);color:var(--k700)}
 /* Líneas de kits del pedido */
-.line{position:relative;background:var(--k50);border:1.5px solid var(--k200);border-radius:10px;padding:8px 10px;margin-bottom:8px}
-.line select{background:#fff;padding-right:34px}
+#lines .line{position:relative;background:var(--k50);border:1.5px solid var(--k200);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+#lines .line select{background:#fff;padding-right:34px}
 .line-row{display:grid;grid-template-columns:80px 1fr;gap:8px}
 .line-row label{margin:6px 0 2px;font-size:12px}
 .line-row input{background:#fff}
 .l-del{position:absolute;top:6px;right:6px;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--k500);font-size:18px;cursor:pointer;line-height:1}
 .l-del:hover{background:var(--red-l);color:var(--red)}
-.line select{width:calc(100% - 34px)}
+#lines .line select{width:calc(100% - 34px)}
 .l-sub{margin-top:6px;font-size:12px;color:var(--k700)}
 .l-sub b{color:var(--k900)}
+.l-vol{margin-bottom:4px;padding:6px 8px;border-radius:8px;background:var(--leaf-l);color:var(--leaf)}
+.l-vol b{color:var(--leaf)}
+.l-vol small{color:var(--k700)}
+.l-hint{margin-bottom:2px;color:var(--k600)}
+.order .disc{font-size:11px;font-weight:700;color:var(--leaf)}
 .add-line{width:100%;border-style:dashed}
 .order .items{margin:2px 0 4px;padding-left:16px}
 .order .items li{margin:1px 0}
@@ -134,6 +139,32 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);ba
 .empty{font-size:13px;color:var(--k600);text-align:center;padding:20px 6px}
 
 /* Historial */
+/* Estadísticas */
+#statsCard{position:relative}
+.seg{display:inline-flex;border:1.5px solid var(--k300);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:7px 12px;font-size:13px;font-weight:600;color:var(--k700);cursor:pointer}
+.seg button + button{border-left:1.5px solid var(--k300)}
+.seg button[aria-pressed="true"]{background:var(--k800);color:var(--cream)}
+.stats-top{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:center;background:var(--k50);border:1.5px solid var(--k200);border-radius:14px;padding:14px 16px}
+.stats-top .medal{grid-row:span 2;font-size:34px;line-height:1}
+.stats-top .lbl{font-size:12px;font-weight:600;color:var(--k600);text-transform:uppercase;letter-spacing:.06em}
+.stats-top .name{font-size:22px;font-weight:700;color:var(--k900);line-height:1.15}
+.stats-top .facts{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-size:13px;color:var(--k700)}
+.stats-top .facts b{font-size:16px;color:var(--ink)}
+.stats-sub{margin:12px 0 6px}
+.bars{display:grid;gap:2px}
+.bar-row{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:10px;align-items:center;padding:5px 6px;border-radius:8px;cursor:default}
+.bar-row:hover,.bar-row:focus-visible{background:var(--k100);outline:none}
+.bar-row .nm{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .nm .rk{display:inline-block;width:18px;color:var(--k600);font-weight:600}
+.bar-track{height:18px;border-left:1px solid var(--k300);display:flex;align-items:center}
+.bar-fill{height:18px;min-width:2px;background:var(--k700);border-radius:0 4px 4px 0;transition:width .4s}
+.bar-row.zero .bar-fill{background:var(--k200)}
+.bar-row .val{font-size:13px;font-weight:600;color:var(--ink);text-align:right;min-width:70px;font-variant-numeric:tabular-nums}
+.bar-row.zero .val,.bar-row.zero .nm{color:var(--k500)}
+.stats-tip{position:absolute;z-index:5;pointer-events:none;background:var(--k900);color:var(--cream);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.5;box-shadow:var(--shadow);max-width:260px}
+.stats-tip b{font-size:13.5px}
+@media (max-width:560px){.bar-row{grid-template-columns:110px 1fr auto}}
 .log{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;font-size:13px}
 .log li{padding:7px 0;border-bottom:1px dashed var(--k200);display:flex;gap:10px}
 .log time{color:var(--k600);white-space:nowrap}
@@ -314,6 +345,24 @@ body:not(.auth) header,body:not(.auth) main{display:none}
         <div class="board" id="board"></div>
       </div>
 
+      <section class="card" id="statsCard" aria-labelledby="statsTitle">
+        <h2 id="statsTitle">📊 Estadísticas · producto más vendido</h2>
+        <div class="toolbar">
+          <div class="seg" role="group" aria-label="Medir por">
+            <button type="button" data-metric="units" aria-pressed="true">Unidades</button>
+            <button type="button" data-metric="revenue" aria-pressed="false">Facturación</button>
+          </div>
+          <div class="seg" role="group" aria-label="Pedidos incluidos">
+            <button type="button" data-scope="all" aria-pressed="true">Todos los pedidos</button>
+            <button type="button" data-scope="delivered" aria-pressed="false">Solo entregados</button>
+          </div>
+        </div>
+        <div class="stats-top" id="statsTop"></div>
+        <p class="muted stats-sub" id="statsSub"></p>
+        <div class="bars" id="statsBars" role="list"></div>
+        <div class="stats-tip" id="statsTip" role="tooltip" hidden></div>
+      </section>
+
       <div class="card">
         <h2>🧾 Historial de movimientos</h2>
         <ul class="log" id="log"></ul>
@@ -353,6 +402,13 @@ const KITS = {
   eventos:   { name:'Eventos',                  ref:'PRY-EVT', planchas:10, tempera:4, price:420.00 },
   escenarios:{ name:'Escenarios',               ref:'PRY-ESC', planchas:15, tempera:6, price:860.00 }
 };
+// Descuento por volumen POR PRODUCTO: se aplica a cada línea según su propia cantidad.
+// [desde N unidades, % de descuento]. Un kit puede tener tramos propios con «tiers» en KITS.
+const VOLUME_TIERS = [[50,20],[25,15],[10,10]];
+const tiersOf = kit => KITS[kit].tiers || VOLUME_TIERS;
+const volDisc = (kit, qty) => { const t = tiersOf(kit).find(([min]) => qty >= min); return t ? t[1] : 0; };
+// Texto de los tramos, p. ej. «10+ uds −10 % · 25+ uds −15 % · 50+ uds −20 %»
+const tiersText = kit => tiersOf(kit).slice().reverse().map(([min, p]) => `${min}+ uds −${p} %`).join(' · ');
 const IVA = 0.21;
 // Datos de la empresa (ficticios) para los albaranes
 const EMPRESA = {
@@ -393,7 +449,7 @@ const now = () => new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digi
 
 // Pedidos de ejemplo (datos ficticios). d = días hasta la entrega.
 const SEED_ORDERS = [
-  { id:'KR-1041', client:'CEIP Miguel Hernández', kit:'arbol', qty:6, more:[['atrapasol',6]], d:-1, status:'maquina', notes:'Aula de 5 años',
+  { id:'KR-1041', client:'CEIP Miguel Hernández', kit:'arbol', qty:25, more:[['atrapasol',6]], d:-1, status:'maquina', notes:'Aula de 5 años',
     cli:{ nif:'Q-5368014-H', phone:'965 39 87 10', addr:'Av. de Ronda, 23', cp:'03600', city:'Elda', prov:'Alicante', email:'secretaria@ceipmhernandez-ficticio.es', contact:'Rosa Albert (jefa de estudios)' } },
   { id:'KR-1042', client:'Laura Gómez Sánchez', kit:'loro', qty:1, d:2, status:'pendiente', notes:'Talla 4-6 años',
     cli:{ nif:'48123456-K', phone:'622 41 08 93', addr:'C/ Antonio Maura, 7, 2º B', cp:'03600', city:'Elda', prov:'Alicante', email:'laura.gomez@correo-ficticio.es', contact:'Laura Gómez Sánchez' } },
@@ -416,7 +472,7 @@ function seed(){
     nextAlb: 1,
     orders: SEED_ORDERS.map(({ kit, qty, more, d, ...o }) => ({
       ...o, cli:{ ...o.cli }, date: addDays(d),
-      items: [[kit, qty], ...(more || [])].map(([k, q]) => ({ kit:k, qty:q, price: KITS[k].price }))
+      items: [[kit, qty], ...(more || [])].map(([k, q]) => ({ kit:k, qty:q, price: KITS[k].price, disc: volDisc(k, q) }))
     })),
     log: [{ t: now(), m: 'Datos de ejemplo cargados' }]
   };
@@ -427,6 +483,7 @@ try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(
 // antes cada pedido tenía un solo kit (kit, qty, price); ahora tiene una lista de líneas en «items».
 (function migrate(){
   db.nextAlb = db.nextAlb || 1;
+  const dropped = [];
   db.orders.forEach(o => {
     const s = SEED_ORDERS.find(x => x.id === o.id);
     if (!o.items){
@@ -434,11 +491,29 @@ try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(
       delete o.kit; delete o.qty; delete o.price;
     }
     if (!o.cli) o.cli = s ? { ...s.cli } : {};
+    // Quita líneas de productos que ya no existen en el catálogo (p. ej. el antiguo «Pack Aula»)
+    const gone = o.items.filter(l => !KITS[l.kit]);
+    if (gone.length){
+      o.items = o.items.filter(l => KITS[l.kit]);
+      dropped.push(`${o.id}: ${gone.map(l => `${l.qty} × ${l.kit}`).join(', ')}`);
+    }
+    // Descuento por volumen por producto: se recalcula en los pedidos sin albarán emitido.
+    // Los que ya tienen albarán conservan sus importes para no cambiar un documento entregado.
+    o.items.forEach(l => { l.disc = o.albNo ? (l.disc || 0) : volDisc(l.kit, l.qty); });
   });
+  if (dropped.length){
+    // Un pedido que se queda sin ningún producto se elimina
+    db.orders = db.orders.filter(o => o.items.length);
+    db.log = db.log || [];
+    db.log.unshift({ t: now(), m: `Productos retirados del catálogo quitados de los pedidos (${dropped.join(' · ')})` });
+  }
 })();
-const eur = v => v.toLocaleString('es-ES', { style:'currency', currency:'EUR' });
+// Formato euro con punto de miles también en cifras de 4 dígitos (1.259,98 €)
+const eur = v => v.toLocaleString('es-ES', { style:'currency', currency:'EUR', useGrouping:'always' });
 const round2 = v => Math.round(v*100)/100;
-const lineBase = l => round2(l.price * l.qty);
+// Importe de una línea sin IVA, ya con el descuento por volumen (disc, en %) si lo tiene
+const lineBase = l => round2(l.price * l.qty * (1 - (l.disc || 0) / 100));
+const lineGross = l => round2(l.price * l.qty);
 const totals = o => {
   const base = round2(o.items.reduce((s, l) => s + lineBase(l), 0)), iva = round2(base*IVA);
   return { base, iva, total: round2(base+iva) };
@@ -503,7 +578,7 @@ function cardHtml(o){
     <button class="x ed" title="Editar pedido" data-edit="${o.id}">✎</button>
     <div class="id">${esc(o.id)}</div>
     <div class="cli">${esc(o.client)}</div>
-    <div class="meta"><ul class="items">${o.items.map(l => `<li>${l.qty} × ${esc(KITS[l.kit].name)}</li>`).join('')}</ul>${n.planchas} planchas · ${n.tempera} botes${o.notes?`<br><em>${esc(o.notes)}</em>`:''}
+    <div class="meta"><ul class="items">${o.items.map(l => `<li>${l.qty} × ${esc(KITS[l.kit].name)}${l.disc ? ` <span class="disc">−${l.disc} %</span>` : ''}</li>`).join('')}</ul>${n.planchas} planchas · ${n.tempera} botes${o.notes?`<br><em>${esc(o.notes)}</em>`:''}
       <br><span class="money">${eur(totals(o).total)}</span> <small>(IVA incl.)</small></div>
     <span class="date">${when}</span>${o.albNo ? `<span class="alb">✓ ${esc(o.albNo)}</span>` : ''}
     ${done ? `<div class="acts"><button class="btn sm" data-alb="${o.id}">🧾 Albarán de entrega</button></div>` : ''}
@@ -534,7 +609,12 @@ function renderPreview(){
   // Subtotal de cada línea
   document.querySelectorAll('#lines .line').forEach((d, i) => {
     const l = lines[i], m = need([l]);
-    d.querySelector('.l-sub').innerHTML = `Subtotal: <b>${eur(lineBase(l))}</b> sin IVA · ${m.planchas} planchas · ${m.tempera} botes`;
+    // Descuento por volumen de este producto según su cantidad
+    const next = tiersOf(l.kit).slice().reverse().find(([min]) => l.qty < min);
+    const vol = l.disc
+      ? `<div class="l-vol">🏷️ Descuento por volumen <b>−${l.disc} %</b> (ahorro ${eur(round2(lineGross(l) - lineBase(l)))})${next ? ` · con ${next[0]} uds: −${next[1]} %` : ''}<br><small>${tiersText(l.kit)}</small></div>`
+      : `<div class="l-hint">Sin descuento${next ? ` · desde ${next[0]} uds: −${next[1]} %` : ''}</div>`;
+    d.querySelector('.l-sub').innerHTML = `${vol}Subtotal: <b>${eur(lineBase(l))}</b> sin IVA · ${m.planchas} planchas · ${m.tempera} botes`;
   });
   const n = need(lines), old = editingOrder() ? need(editingOrder().items) : { planchas:0, tempera:0 };
   const dp = n.planchas - old.planchas, dt = n.tempera - old.tempera;
@@ -551,7 +631,70 @@ function renderPreview(){
     Quedarán: <b>${p}</b> planchas · <b>${t}</b> botes${bad ? '<br><b>No hay material suficiente para este pedido.</b>' : (p <= MATERIALS.planchas.min ? '<br>⚠️ Llegará al mínimo de planchas.' : '')}`;
 }
 
-function render(){ renderAlerts(); renderKpis(); renderStock(); renderBoard(); renderLog(); renderPreview(); save(); }
+/* ---------- Estadísticas de productos ---------- */
+const statsView = { metric:'units', scope:'all' };   // qué se mide y qué pedidos cuentan
+function productStats(){
+  const orders = db.orders.filter(o => statsView.scope === 'all' || o.status === 'entregado');
+  const rows = Object.keys(KITS).map(k => ({ kit:k, units:0, revenue:0, orders:new Set() }));
+  const byKit = Object.fromEntries(rows.map(r => [r.kit, r]));
+  orders.forEach(o => o.items.forEach(l => {
+    const r = byKit[l.kit]; if (!r) return;
+    r.units += l.qty; r.revenue = round2(r.revenue + lineBase(l)); r.orders.add(o.id);
+  }));
+  const m = statsView.metric, other = m === 'units' ? 'revenue' : 'units';
+  rows.sort((a, b) => b[m] - a[m] || b[other] - a[other] || KITS[a.kit].name.localeCompare(KITS[b.kit].name));
+  const totalUnits = rows.reduce((s, r) => s + r.units, 0), totalRevenue = round2(rows.reduce((s, r) => s + r.revenue, 0));
+  return { rows, totalUnits, totalRevenue, nOrders: orders.length };
+}
+const fmtVal = (r, m) => m === 'units' ? `${r.units} ud${r.units === 1 ? '' : 's'}` : eur(r.revenue);
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+
+function renderStats(){
+  const { rows, totalUnits, totalRevenue, nOrders } = productStats(), m = statsView.metric;
+  document.querySelectorAll('#statsCard [data-metric]').forEach(b => b.setAttribute('aria-pressed', b.dataset.metric === m));
+  document.querySelectorAll('#statsCard [data-scope]').forEach(b => b.setAttribute('aria-pressed', b.dataset.scope === statsView.scope));
+  const top = rows[0], scopeTxt = statsView.scope === 'all' ? 'en todos los pedidos' : 'en pedidos entregados';
+  $('#statsTop').innerHTML = top && top[m] > 0
+    ? `<span class="medal" aria-hidden="true">🏆</span>
+       <span class="lbl">Producto más vendido ${m === 'units' ? 'por unidades' : 'por facturación'}</span>
+       <span class="name">${esc(KITS[top.kit].name)}</span>
+       <div class="facts"><span><b>${top.units}</b> uds (${pct(top.units, totalUnits)} % del total)</span>
+         <span><b>${eur(top.revenue)}</b> sin IVA (${pct(top.revenue, totalRevenue)} %)</span>
+         <span><b>${top.orders.size}</b> pedido${top.orders.size === 1 ? '' : 's'}</span></div>`
+    : `<span class="medal" aria-hidden="true">📭</span><span class="lbl">Producto más vendido</span><span class="name">Aún no hay ventas ${scopeTxt}</span>`;
+  $('#statsSub').textContent = `Ranking ${m === 'units' ? 'por unidades vendidas' : 'por facturación sin IVA'} ${scopeTxt} · ${nOrders} pedido${nOrders === 1 ? '' : 's'} · ${totalUnits} uds · ${eur(totalRevenue)}`;
+  const max = Math.max(1, ...rows.map(r => r[m]));
+  $('#statsBars').innerHTML = rows.map((r, i) => `
+    <div class="bar-row${r[m] ? '' : ' zero'}" role="listitem" tabindex="0" data-kit="${r.kit}"
+         aria-label="${esc(KITS[r.kit].name)}: ${r.units} unidades, ${eur(r.revenue)} sin IVA, ${r.orders.size} pedidos">
+      <span class="nm" title="${esc(KITS[r.kit].name)}"><span class="rk">${i + 1}</span>${esc(KITS[r.kit].name)}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${r[m] / max * 100}%"></span></span>
+      <span class="val">${r[m] ? fmtVal(r, m) : 'sin ventas'}</span>
+    </div>`).join('');
+  $('#statsBars')._rows = rows; $('#statsBars')._tot = { totalUnits, totalRevenue };
+}
+$('#statsCard').addEventListener('click', e => {
+  const b = e.target.closest('[data-metric],[data-scope]'); if (!b) return;
+  if (b.dataset.metric) statsView.metric = b.dataset.metric; else statsView.scope = b.dataset.scope;
+  renderStats();
+});
+// Tooltip al pasar el ratón o al enfocar una fila con el teclado
+function showStatsTip(row){
+  const tip = $('#statsTip'), r = ($('#statsBars')._rows || []).find(x => x.kit === row.dataset.kit); if (!r) return;
+  const t = $('#statsBars')._tot;
+  tip.innerHTML = `<b>${esc(KITS[r.kit].name)}</b><br>${r.units} uds · ${pct(r.units, t.totalUnits)} % de las unidades<br>${eur(r.revenue)} sin IVA · ${pct(r.revenue, t.totalRevenue)} % de la facturación<br>${r.orders.size} pedido${r.orders.size === 1 ? '' : 's'}`;
+  tip.hidden = false;
+  const card = $('#statsCard').getBoundingClientRect(), rr = row.getBoundingClientRect();
+  tip.style.top = `${rr.bottom - card.top + 4}px`;
+  tip.style.left = `${Math.min(rr.left - card.left + 140, card.width - tip.offsetWidth - 12)}px`;
+}
+const hideStatsTip = () => { $('#statsTip').hidden = true; };
+$('#statsBars').addEventListener('mouseover', e => { const r = e.target.closest('.bar-row'); if (r) showStatsTip(r); });
+$('#statsBars').addEventListener('mouseleave', hideStatsTip);
+$('#statsBars').addEventListener('focusin', e => { const r = e.target.closest('.bar-row'); if (r) showStatsTip(r); });
+$('#statsBars').addEventListener('focusout', hideStatsTip);
+
+function render(){ renderAlerts(); renderKpis(); renderStock(); renderBoard(); renderStats(); renderLog(); renderPreview(); save(); }
 
 /* ---------- Acciones ---------- */
 function moveOrder(id, toState){
@@ -603,7 +746,7 @@ function readLines(){
     kit: d.querySelector('.l-kit').value,
     qty: Math.max(0, parseInt(d.querySelector('.l-qty').value, 10) || 0),
     price: round2(Math.max(0, parseFloat(d.querySelector('.l-price').value) || 0))
-  }));
+  })).map(l => ({ ...l, disc: volDisc(l.kit, l.qty) }));   // el descuento por volumen se calcula solo
 }
 // Con una sola línea no se muestra la × (un pedido necesita al menos un kit)
 function updateLineButtons(){
@@ -665,7 +808,7 @@ function saveEdit(){
   const changes = [];
   if (date !== o.date) changes.push(`entrega ${fmtDate(o.date)} → ${fmtDate(date)}`);
   if (client !== o.client) changes.push(`cliente «${client}»`);
-  const sameItems = JSON.stringify(items) === JSON.stringify(o.items.map(({kit,qty,price}) => ({kit,qty,price})));
+  const sameItems = JSON.stringify(items) === JSON.stringify(o.items.map(({kit,qty,price,disc}) => ({kit,qty,price,disc:disc||0})));
   if (!sameItems){
     if (itemsLabel(items) !== itemsLabel(o.items)) changes.push(`kits: ${itemsLabel(o.items)} → ${itemsLabel(items)}`);
     else changes.push('precios');
@@ -731,10 +874,10 @@ $('#board').addEventListener('drop', e => { const c = e.target.closest('.col'); 
 $('#exportBtn').addEventListener('click', () => {
   const num = v => v.toFixed(2).replace('.', ',');
   // Una fila por cada kit del pedido; los totales del pedido solo en su primera fila (para poder sumarlos)
-  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Importe línea','Base imponible pedido','IVA pedido','Total pedido','Entrega','Estado','Albarán','Planchas','Témperas','Notas']]
+  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Dto. volumen %','Importe línea','Base imponible pedido','IVA pedido','Total pedido','Entrega','Estado','Albarán','Planchas','Témperas','Notas']]
     .concat(db.orders.flatMap(o => { const t = totals(o), c = o.cli || {}, st = STATES.find(s=>s.id===o.status).name;
       return o.items.map((l, i) => { const n = need([l]), first = i === 0;
-        return [o.id,o.client,c.nif||'',c.phone||'',c.email||'',c.addr||'',c.cp||'',c.city||'',c.prov||'',KITS[l.kit].name,l.qty,num(l.price),num(lineBase(l)),
+        return [o.id,o.client,c.nif||'',c.phone||'',c.email||'',c.addr||'',c.cp||'',c.city||'',c.prov||'',KITS[l.kit].name,l.qty,num(l.price),l.disc||0,num(lineBase(l)),
           first?num(t.base):'',first?num(t.iva):'',first?num(t.total):'',o.date,st,o.albNo||'',n.planchas,n.tempera,first?o.notes:'']; }); }));
   const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
   const a = document.createElement('a');
@@ -829,15 +972,16 @@ function openAlbaran(id){
     </div>
 
     <table class="d-table">
-      <thead><tr><th>Ref.</th><th>Descripción</th><th class="n">Cant.</th><th class="n">Precio ud.</th><th class="n">Importe</th></tr></thead>
+      <thead><tr><th>Ref.</th><th>Descripción</th><th class="n">Cant.</th><th class="n">Precio ud.</th><th class="n">Dto.</th><th class="n">Importe</th></tr></thead>
       <tbody>${o.items.map(l => { const k = KITS[l.kit]; return `<tr>
         <td>${esc(k.ref)}</td>
-        <td><b>${esc(k.name)}</b></td>
+        <td><b>${esc(k.name)}</b>${l.disc ? `<br><small>Descuento por volumen aplicado (${l.qty} uds)</small>` : ''}</td>
         <td class="n">${l.qty}</td>
         <td class="n">${eur(l.price)}</td>
+        <td class="n">${l.disc ? `${l.disc} %` : '—'}</td>
         <td class="n"><b>${eur(lineBase(l))}</b></td>
       </tr>`; }).join('')}</tbody>
-      <tfoot><tr><td colspan="2"><small>${o.items.length} ${o.items.length === 1 ? 'referencia' : 'referencias'} · ${unitsOf(o)} unidades${o.notes ? ` · Notas: ${esc(o.notes)}` : ''}</small></td>
+      <tfoot><tr><td colspan="3"><small>${o.items.length} ${o.items.length === 1 ? 'referencia' : 'referencias'} · ${unitsOf(o)} unidades${o.notes ? ` · Notas: ${esc(o.notes)}` : ''}</small></td>
         <td colspan="2" class="n"><small>Suma de importes</small></td><td class="n"><b>${eur(t.base)}</b></td></tr></tfoot>
     </table>
 
