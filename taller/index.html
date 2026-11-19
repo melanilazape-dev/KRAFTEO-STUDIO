@@ -47,6 +47,43 @@ header .sp{flex:1}
 .grid{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
 .grid > *{min-width:0}
 @media (max-width:1200px){.grid{grid-template-columns:1fr}}
+
+/* ---------- Menú lateral y hojas ---------- */
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);align-items:start}
+.side{position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:4px;padding:20px 12px;background:var(--k100);border-right:1px solid var(--k200)}
+.side-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--k600);padding:0 12px 8px}
+.side a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;color:var(--k800);text-decoration:none;font-weight:600;font-size:15px}
+.side a:hover{background:var(--k200)}
+.side a:focus-visible{outline:2px solid var(--k700);outline-offset:2px}
+.side a[aria-current="page"]{background:var(--k800);color:var(--cream)}
+.side .ic{font-size:18px;width:24px;text-align:center}
+.side .badge{margin-left:auto;min-width:24px;text-align:center;font-size:12px;font-weight:700;padding:1px 8px;border-radius:99px;background:#fff;color:var(--k800)}
+.side .badge:empty{display:none}
+.side .badge.warn{background:var(--red);color:#fff}
+.side a[aria-current="page"] .badge:not(.warn){background:var(--k600);color:var(--cream)}
+.content{min-width:0;max-width:1400px;padding:0 24px 30px}
+.view-head h1{font-size:28px;font-weight:700;color:var(--k900);margin:20px 0 2px}
+.view-head p{margin:0 0 4px;color:var(--k700)}
+.inv-grid{display:grid;grid-template-columns:minmax(300px,440px) minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
+.inv-grid .card + .card{margin-top:0}
+.inv-grid .log{max-height:520px}
+#statsCard{margin-top:18px;max-width:900px}
+@media (max-width:1000px){.inv-grid{grid-template-columns:1fr}}
+/* En móvil y tablet el menú pasa a ser una barra de pestañas arriba */
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{flex-direction:row;height:auto;z-index:8;padding:8px 12px;border-right:0;border-bottom:1px solid var(--k200);overflow-x:auto}
+  .side-label{display:none}
+  .side a{flex:1;justify-content:center;padding:9px 10px;font-size:14px;white-space:nowrap}
+  .side .badge{margin-left:4px}
+  .content{padding:0 16px 24px}
+}
+@media (max-width:520px){
+  .side{gap:4px;padding:6px 8px}
+  .side a{position:relative;flex-direction:column;gap:2px;padding:7px 4px;font-size:12px;min-width:0}
+  .side .ic{font-size:20px}
+  .side .badge{position:absolute;top:3px;right:calc(50% - 30px);margin:0;font-size:10px;min-width:18px;padding:0 5px}
+}
 .card{background:#fff;border:1px solid var(--k200);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .card + .card{margin-top:18px}
 .card h2{font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
@@ -107,6 +144,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);ba
 .order .x:hover{color:var(--red)}
 .order .x.ed{font-size:14px;margin-right:6px}
 .order .x.ed:hover{color:var(--k900)}
+.order .x.lock{cursor:default;font-size:13px}
 .order.editing{outline:3px solid var(--sun);outline-offset:1px}
 #orderForm.editing{border:2px solid var(--sun)}
 #orderForm input[readonly]{background:var(--k100);color:var(--k700)}
@@ -169,12 +207,33 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);ba
 .log li{padding:7px 0;border-bottom:1px dashed var(--k200);display:flex;gap:10px}
 .log time{color:var(--k600);white-space:nowrap}
 .foot{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 30px}
+/* Listado de pedidos (tipo hoja de cálculo) */
+#ordersTable{margin-top:18px}
+#ordersTable .toolbar .sp{flex:1}
+.tbl-wrap{overflow:auto;max-height:560px;border:1px solid var(--k200);border-radius:12px}
+.otable{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:980px}
+.otable th,.otable td{padding:8px 10px;border-bottom:1px solid var(--k200);text-align:left;vertical-align:middle;white-space:nowrap}
+.otable thead th{position:sticky;top:0;z-index:1;background:var(--k100);color:var(--k900);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+.otable th[data-sort]{cursor:pointer;user-select:none}
+.otable th[data-sort]:hover{background:var(--k200)}
+.otable th[aria-sort="ascending"]::after{content:" ▲";font-size:9px}
+.otable th[aria-sort="descending"]::after{content:" ▼";font-size:9px}
+.otable .n{text-align:right;font-variant-numeric:tabular-nums}
+.otable tbody tr:nth-child(even) td{background:var(--k50)}
+.otable tbody tr:hover td{background:#FCEFD2}
+.otable td.prod{white-space:normal;min-width:200px;color:var(--k800)}
+.otable tfoot td{position:sticky;bottom:0;background:var(--k800);color:var(--cream);font-weight:700;border:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.pill i{width:8px;height:8px;border-radius:50%}
+.fac-link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--leaf);cursor:pointer;text-decoration:underline}
+.btn.xs{padding:4px 10px;font-size:12px}
+.otable .empty{text-align:center;color:var(--k600);padding:22px}
 
 /* Pantalla de acceso */
 .grain{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 #login{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background-color:var(--k200);overflow:auto}
 body.auth #login{display:none}
-body:not(.auth) header,body:not(.auth) main{display:none}
+body:not(.auth) header,body:not(.auth) .shell{display:none}
 .login-card{width:100%;max-width:420px;background:var(--cream);border-radius:20px;overflow:hidden;box-shadow:0 24px 48px -24px rgba(74,56,40,.45);border:1px solid var(--k300)}
 .login-card img{display:block;width:100%;aspect-ratio:16/8;object-fit:cover}
 .login-body{padding:22px 26px 26px}
@@ -186,7 +245,7 @@ body:not(.auth) header,body:not(.auth) main{display:none}
 .logout:hover{background:var(--k800);color:var(--cream)}
 .htitle{font-weight:600;font-size:16px;color:var(--k100)}
 
-/* ---------- Albarán ---------- */
+/* ---------- Factura ---------- */
 #albaran{position:fixed;inset:0;z-index:30;background:rgba(42,32,24,.72);overflow:auto;padding:0 16px 40px}
 #albaran[hidden]{display:none}
 .alb-bar{position:sticky;top:0;z-index:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:820px;margin:0 auto 16px;padding:12px 16px;background:var(--k900);color:var(--cream);border-radius:0 0 14px 14px}
@@ -232,6 +291,9 @@ body:not(.auth) header,body:not(.auth) main{display:none}
 .d-tot .big{background:var(--k800);color:var(--cream);font-size:16px;font-weight:700;border:0;padding:10px 12px}
 .d-obs{margin-top:10px;font-size:11.5px;color:var(--k800)}
 .d-sign{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px}
+.d-pay{margin-top:12px;break-inside:avoid}
+.d-pay .d-kv{grid-template-columns:auto 1fr auto 1fr;gap:2px 14px}
+@media (max-width:640px){.d-pay .d-kv{grid-template-columns:auto 1fr}}
 .d-sign .d-box{min-height:78px;display:flex;flex-direction:column}
 .d-sign .line{margin-top:auto;border-top:1px solid var(--k400);padding-top:4px;font-size:10.5px;color:var(--k600)}
 .d-foot{margin-top:12px;padding-top:10px;border-top:1px dashed var(--k300);font-size:9.5px;color:var(--k600);text-align:center;line-height:1.4}
@@ -289,14 +351,25 @@ body:not(.auth) header,body:not(.auth) main{display:none}
   <div class="cut"></div>
 </header>
 
-<main class="wrap">
-  <div id="alerts"></div>
-  <section class="kpis" id="kpis"></section>
+<div class="shell">
+  <!-- Menú lateral -->
+  <nav class="side" aria-label="Secciones de la aplicación">
+    <span class="side-label">Menú</span>
+    <a href="#pedidos" data-view="pedidos"><span class="ic" aria-hidden="true">🗂️</span><span class="tx">Pedidos</span><span class="badge" id="navPedidos" title="Pedidos en curso"></span></a>
+    <a href="#inventario" data-view="inventario"><span class="ic" aria-hidden="true">📦</span><span class="tx">Inventario</span><span class="badge warn" id="navInv" title="Material en stock mínimo" hidden></span></a>
+    <a href="#estadisticas" data-view="estadisticas"><span class="ic" aria-hidden="true">📊</span><span class="tx">Estadísticas</span></a>
+  </nav>
 
-  <div class="grid">
-    <!-- Columna izquierda -->
-    <aside>
-      <form class="card" id="orderForm" autocomplete="off">
+  <main class="content">
+    <div id="alerts"></div>
+
+    <!-- HOJA 1 · PEDIDOS -->
+    <section class="view" data-view="pedidos" aria-labelledby="vPedidos">
+      <div class="view-head"><h1 id="vPedidos">Pedidos</h1><p>Alta, edición y seguimiento de los pedidos del taller.</p></div>
+      <section class="kpis" id="kpis"></section>
+      <div class="grid">
+        <aside>
+          <form class="card" id="orderForm" autocomplete="off">
         <h2 id="formTitle">✂️ Nuevo pedido</h2>
         <div class="row">
           <div><label for="fId">Nº pedido</label><input id="fId" required></div>
@@ -317,36 +390,82 @@ body:not(.auth) header,body:not(.auth) main{display:none}
         <button class="btn full" type="submit" id="formSubmit">Añadir al tablero</button>
         <button class="btn ghost full" type="button" id="formCancel" hidden style="margin-top:8px">Cancelar edición</button>
       </form>
-
-      <section class="card">
-        <h2>📦 Inventario</h2>
-        <div class="stock" id="stock"></div>
-        <form class="restock" id="restockForm">
-          <div><label for="rItem">Ajustar material</label><select id="rItem"></select></div>
-          <div><label for="rQty">Unid.</label><input id="rQty" type="number" min="1" value="10"></div>
-          <div class="restock-btns">
-            <button class="btn ghost" type="submit" data-sign="1">+ Añadir</button>
-            <button class="btn ghost" type="submit" data-sign="-1">− Quitar</button>
+        </aside>
+        <section>
+          <div class="card">
+            <h2>🗂️ Tablero de producción</h2>
+            <div class="toolbar">
+              <input id="search" type="search" placeholder="Buscar cliente o nº pedido…">
+              <select id="filterKit"><option value="">Todos los kits</option></select>
+              <span class="muted">Arrastra las tarjetas o usa los botones para cambiar el estado.</span>
+            </div>
+            <div class="board" id="board"></div>
           </div>
-          <div class="restock-msg" id="restockMsg" role="alert"></div>
-        </form>
-      </section>
-    </aside>
-
-    <!-- Tablero -->
-    <section>
-      <div class="card">
-        <h2>🗂️ Tablero de producción</h2>
-        <div class="toolbar">
-          <input id="search" type="search" placeholder="Buscar cliente o nº pedido…">
-          <select id="filterKit"><option value="">Todos los kits</option></select>
-          <span class="muted">Arrastra las tarjetas o usa los botones para cambiar el estado.</span>
-        </div>
-        <div class="board" id="board"></div>
+        </section>
       </div>
 
+      <!-- Listado de todos los pedidos guardados, tipo hoja de cálculo, con opción de facturar -->
+      <section class="card" id="ordersTable" aria-labelledby="otTitle">
+        <h2 id="otTitle">📋 Listado de pedidos</h2>
+        <div class="toolbar">
+          <input id="tSearch" type="search" placeholder="Buscar cliente, pedido o factura…" aria-label="Buscar en el listado">
+          <div class="seg" role="group" aria-label="Mostrar">
+            <button type="button" data-tfilter="all" aria-pressed="true">Todos</button>
+            <button type="button" data-tfilter="pending" aria-pressed="false">Sin facturar</button>
+            <button type="button" data-tfilter="invoiced" aria-pressed="false">Facturados</button>
+          </div>
+          <span class="sp"></span>
+          <button type="button" class="btn sm" id="bulkInvoice">🧾 Facturar entregados</button>
+          <button type="button" class="btn ghost sm" id="exportBtn">⬇️ Descargar Excel</button>
+        </div>
+        <div class="tbl-wrap">
+          <table class="otable">
+            <thead><tr>
+              <th data-sort="id">Pedido</th><th data-sort="client">Cliente</th><th>Productos</th>
+              <th data-sort="units" class="n">Uds</th><th data-sort="date">Entrega</th><th data-sort="status">Estado</th>
+              <th data-sort="base" class="n">Base</th><th data-sort="iva" class="n">IVA</th><th data-sort="total" class="n">Total</th>
+              <th data-sort="fac">Factura</th>
+            </tr></thead>
+            <tbody id="tBody"></tbody>
+            <tfoot id="tFoot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div class="foot">
+        <button class="btn ghost sm" id="resetBtn">Restaurar datos de ejemplo</button>
+      </div>
+    </section>
+
+    <!-- HOJA 2 · INVENTARIO -->
+    <section class="view" data-view="inventario" aria-labelledby="vInventario" hidden>
+      <div class="view-head"><h1 id="vInventario">Inventario</h1><p>Stock de planchas de cartón kraft y botes de témpera, entradas de proveedor y movimientos.</p></div>
+      <div class="inv-grid">
+        <section class="card">
+          <h2>📦 Stock de material</h2>
+          <div class="stock" id="stock"></div>
+          <form class="restock" id="restockForm">
+            <div><label for="rItem">Ajustar material</label><select id="rItem"></select></div>
+            <div><label for="rQty">Unid.</label><input id="rQty" type="number" min="1" value="10"></div>
+            <div class="restock-btns">
+              <button class="btn ghost" type="submit" data-sign="1">+ Añadir</button>
+              <button class="btn ghost" type="submit" data-sign="-1">− Quitar</button>
+            </div>
+            <div class="restock-msg" id="restockMsg" role="alert"></div>
+          </form>
+        </section>
+        <div class="card">
+          <h2>🧾 Historial de movimientos</h2>
+          <ul class="log" id="log"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOJA 3 · ESTADÍSTICAS -->
+    <section class="view" data-view="estadisticas" aria-labelledby="vEstadisticas" hidden>
+      <div class="view-head"><h1 id="vEstadisticas">Estadísticas</h1><p>Qué productos se venden más, por unidades o por facturación.</p></div>
       <section class="card" id="statsCard" aria-labelledby="statsTitle">
-        <h2 id="statsTitle">📊 Estadísticas · producto más vendido</h2>
+        <h2 id="statsTitle">🏆 Producto más vendido</h2>
         <div class="toolbar">
           <div class="seg" role="group" aria-label="Medir por">
             <button type="button" data-metric="units" aria-pressed="true">Unidades</button>
@@ -362,29 +481,19 @@ body:not(.auth) header,body:not(.auth) main{display:none}
         <div class="bars" id="statsBars" role="list"></div>
         <div class="stats-tip" id="statsTip" role="tooltip" hidden></div>
       </section>
-
-      <div class="card">
-        <h2>🧾 Historial de movimientos</h2>
-        <ul class="log" id="log"></ul>
-      </div>
-
-      <div class="foot">
-        <button class="btn ghost sm" id="exportBtn">Descargar historial de pedidos (Excel)</button>
-        <button class="btn ghost sm" id="resetBtn">Restaurar datos de ejemplo</button>
-      </div>
     </section>
-  </div>
-</main>
+  </main>
+</div>
 
 <div class="toast" id="toast"></div>
 
-<!-- Albarán de entrega -->
+<!-- Factura (original + copia) -->
 <div id="albaran" hidden role="dialog" aria-modal="true" aria-labelledby="albBarTitle">
   <div class="alb-bar">
-    <b id="albBarTitle">Albarán de entrega</b>
+    <b id="albBarTitle">Factura</b>
     <span class="sp"></span>
-    <button class="btn sm" id="albPdf" title="Descarga el ejemplar para la empresa en PDF">⬇️ Descargar PDF (empresa)</button>
-    <button class="btn sm" id="albPrint">🖨️ Imprimir (2 copias)</button>
+    <button class="btn sm" id="albPdf" title="Descarga en PDF la copia de la factura para la empresa">⬇️ Descargar PDF (copia empresa)</button>
+    <button class="btn sm" id="albPrint">🖨️ Imprimir (original + copia)</button>
     <button class="btn ghost sm" id="albClose">Cerrar</button>
   </div>
   <div id="albDoc"></div>
@@ -392,7 +501,7 @@ body:not(.auth) header,body:not(.auth) main{display:none}
 
 <script>
 /* ---------- Configuración del taller ---------- */
-// price = precio por unidad SIN IVA (€). ref = referencia que sale en el albarán.
+// price = precio por unidad SIN IVA (€). ref = referencia que sale en la factura.
 const KITS = {
   loro:      { name:'Disfraz de loro',          ref:'KIT-LOR', planchas:3,  tempera:2, price:24.90 },
   mariposa:  { name:'Alas de mariposa',         ref:'KIT-MAR', planchas:2,  tempera:2, price:18.50 },
@@ -410,13 +519,13 @@ const volDisc = (kit, qty) => { const t = tiersOf(kit).find(([min]) => qty >= mi
 // Texto de los tramos, p. ej. «10+ uds −10 % · 25+ uds −15 % · 50+ uds −20 %»
 const tiersText = kit => tiersOf(kit).slice().reverse().map(([min, p]) => `${min}+ uds −${p} %`).join(' · ');
 const IVA = 0.21;
-// Datos de la empresa (ficticios) para los albaranes
+// Datos de la empresa (ficticios) para las facturas
 const EMPRESA = {
   nombre:'Krafteo Studio S.L.', cif:'B-54839271',
   dir:'C/ Jardines, 14 · Nave 3 · Pol. Ind. Campo Alto', cp:'03600', city:'Elda', prov:'Alicante',
   tel:'965 38 21 47', email:'pedidos@krafteostudio.es', web:'krafteo-studio.vercel.app',
   registro:'Inscrita en el Registro Mercantil de Alicante, Tomo 4.512, Folio 87, Hoja A-176.903',
-  pago:'Transferencia bancaria a 30 días · ES21 0081 1234 5600 0123 4567'
+  iban:'ES21 0081 1234 5600 0123 4567'
 };
 // Datos del cliente que se piden en el pedido
 const CLIENT_FIELDS = [
@@ -469,7 +578,7 @@ function seed(){
   return {
     next: 1048,
     stock: { planchas: 64, tempera: 22 },
-    nextAlb: 1,
+    nextFac: 1,
     orders: SEED_ORDERS.map(({ kit, qty, more, d, ...o }) => ({
       ...o, cli:{ ...o.cli }, date: addDays(d),
       items: [[kit, qty], ...(more || [])].map(([k, q]) => ({ kit:k, qty:q, price: KITS[k].price, disc: volDisc(k, q) }))
@@ -482,10 +591,14 @@ try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(
 // Adapta datos guardados con versiones anteriores de la app:
 // antes cada pedido tenía un solo kit (kit, qty, price); ahora tiene una lista de líneas en «items».
 (function migrate(){
-  db.nextAlb = db.nextAlb || 1;
+  db.nextFac = db.nextFac || 1;
+  delete db.nextAlb;
   const dropped = [];
   db.orders.forEach(o => {
     const s = SEED_ORDERS.find(x => x.id === o.id);
+    // Antes se emitían albaranes; ahora son facturas con su propia numeración (serie F).
+    // Los números de albarán antiguos se descartan: la factura se emite al abrirla por primera vez.
+    if ('albNo' in o){ delete o.albNo; delete o.albDate; delete o.albUser; }
     if (!o.items){
       o.items = [{ kit:o.kit, qty:o.qty, price: o.price != null ? o.price : KITS[o.kit].price }];
       delete o.kit; delete o.qty; delete o.price;
@@ -497,9 +610,9 @@ try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(
       o.items = o.items.filter(l => KITS[l.kit]);
       dropped.push(`${o.id}: ${gone.map(l => `${l.qty} × ${l.kit}`).join(', ')}`);
     }
-    // Descuento por volumen por producto: se recalcula en los pedidos sin albarán emitido.
-    // Los que ya tienen albarán conservan sus importes para no cambiar un documento entregado.
-    o.items.forEach(l => { l.disc = o.albNo ? (l.disc || 0) : volDisc(l.kit, l.qty); });
+    // Descuento por volumen por producto: se recalcula en los pedidos sin factura emitida.
+    // Los que ya tienen factura conservan sus importes para no cambiar un documento emitido.
+    o.items.forEach(l => { l.disc = o.facNo ? (l.disc || 0) : volDisc(l.kit, l.qty); });
   });
   if (dropped.length){
     // Un pedido que se queda sin ningún producto se elimina
@@ -574,14 +687,16 @@ function cardHtml(o){
   const i = STATES.findIndex(s => s.id===o.status);
   const n = need(o.items);
   return `<article class="order ${cls}${o.id===editingId?' editing':''}" draggable="true" data-id="${o.id}">
-    <button class="x" title="Eliminar pedido" data-del="${o.id}">×</button>
-    <button class="x ed" title="Editar pedido" data-edit="${o.id}">✎</button>
+    ${o.facNo
+      ? `<span class="x lock" title="Facturado: no se puede editar ni eliminar">🔒</span>`
+      : `<button class="x" title="Eliminar pedido" data-del="${o.id}">×</button>
+    <button class="x ed" title="Editar pedido" data-edit="${o.id}">✎</button>`}
     <div class="id">${esc(o.id)}</div>
     <div class="cli">${esc(o.client)}</div>
     <div class="meta"><ul class="items">${o.items.map(l => `<li>${l.qty} × ${esc(KITS[l.kit].name)}${l.disc ? ` <span class="disc">−${l.disc} %</span>` : ''}</li>`).join('')}</ul>${n.planchas} planchas · ${n.tempera} botes${o.notes?`<br><em>${esc(o.notes)}</em>`:''}
       <br><span class="money">${eur(totals(o).total)}</span> <small>(IVA incl.)</small></div>
-    <span class="date">${when}</span>${o.albNo ? `<span class="alb">✓ ${esc(o.albNo)}</span>` : ''}
-    ${done ? `<div class="acts"><button class="btn sm" data-alb="${o.id}">🧾 Albarán de entrega</button></div>` : ''}
+    <span class="date">${when}</span>${o.facNo ? `<span class="alb">🧾 ${esc(o.facNo)}</span>` : ''}
+    ${done ? `<div class="acts"><button class="btn sm" data-alb="${o.id}">🧾 ${o.facNo ? 'Ver factura' : 'Emitir factura'}</button></div>` : ''}
     <div class="acts">
       ${i>0 ? `<button class="btn ghost sm" data-move="${o.id}" data-dir="-1">←</button>` : ''}
       ${i<STATES.length-1 ? `<button class="btn sm" data-move="${o.id}" data-dir="1">${STATES[i+1].action} →</button>` : ''}
@@ -694,7 +809,91 @@ $('#statsBars').addEventListener('mouseleave', hideStatsTip);
 $('#statsBars').addEventListener('focusin', e => { const r = e.target.closest('.bar-row'); if (r) showStatsTip(r); });
 $('#statsBars').addEventListener('focusout', hideStatsTip);
 
-function render(){ renderAlerts(); renderKpis(); renderStock(); renderBoard(); renderStats(); renderLog(); renderPreview(); save(); }
+/* ---------- Menú lateral: cada sección es una hoja (#pedidos, #inventario, #estadisticas) ---------- */
+const VIEWS = { pedidos:'Pedidos', inventario:'Inventario', estadisticas:'Estadísticas' };
+function showView(v){
+  if (!VIEWS[v]) v = 'pedidos';
+  document.querySelectorAll('.view').forEach(s => { s.hidden = s.dataset.view !== v; });
+  document.querySelectorAll('.side a').forEach(a => {
+    if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  document.title = `${VIEWS[v]} · Krafteo Studio`;
+  hideStatsTip();
+}
+window.addEventListener('hashchange', () => { showView(location.hash.slice(1)); window.scrollTo(0, 0); });
+// Números del menú: pedidos en curso y aviso de stock en mínimo
+function renderNav(){
+  $('#navPedidos').textContent = db.orders.filter(o => o.status !== 'entregado').length || '';
+  const low = Object.keys(MATERIALS).filter(k => isLow(k)).length;
+  $('#navInv').hidden = !low; $('#navInv').textContent = low ? '!' : '';
+}
+
+/* ---------- Listado de pedidos (tipo hoja de cálculo) ---------- */
+const tableView = { sort:'date', dir:1, filter:'all' };
+const STATE_ORDER = Object.fromEntries(STATES.map((s, i) => [s.id, i]));
+function tableRows(){
+  const q = $('#tSearch').value.trim().toLowerCase();
+  return db.orders
+    .filter(o => tableView.filter === 'all' || (tableView.filter === 'invoiced' ? !!o.facNo : !o.facNo))
+    .filter(o => !q || `${o.id} ${o.client} ${o.facNo || ''} ${itemsLabel(o.items)}`.toLowerCase().includes(q))
+    .map(o => ({ o, t: totals(o), units: unitsOf(o) }))
+    .sort((a, b) => {
+      const k = tableView.sort, v = r => ({ id:r.o.id, client:r.o.client.toLowerCase(), units:r.units, date:r.o.date,
+        status:STATE_ORDER[r.o.status], base:r.t.base, iva:r.t.iva, total:r.t.total, fac:r.o.facNo || '' })[k];
+      const x = v(a), y = v(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * tableView.dir || a.o.id.localeCompare(b.o.id);
+    });
+}
+function renderTable(){
+  const rows = tableRows();
+  document.querySelectorAll('#ordersTable [data-tfilter]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tfilter === tableView.filter));
+  document.querySelectorAll('#ordersTable th[data-sort]').forEach(th => {
+    if (th.dataset.sort === tableView.sort) th.setAttribute('aria-sort', tableView.dir > 0 ? 'ascending' : 'descending');
+    else th.removeAttribute('aria-sort');
+  });
+  $('#tBody').innerHTML = rows.length ? rows.map(({ o, t, units }) => {
+    const st = STATES.find(s => s.id === o.status);
+    const fac = o.facNo
+      ? `<button type="button" class="fac-link" data-alb="${o.id}" title="Ver factura">🧾 ${esc(o.facNo)}</button>`
+      : `<button type="button" class="btn xs${o.status === 'entregado' ? '' : ' ghost'}" data-alb="${o.id}">Facturar</button>`;
+    return `<tr>
+      <td><b>${esc(o.id)}</b></td><td>${esc(o.client)}</td>
+      <td class="prod">${o.items.map(l => `${l.qty} × ${esc(KITS[l.kit].name)}${l.disc ? ` (−${l.disc} %)` : ''}`).join('<br>')}</td>
+      <td class="n">${units}</td><td>${fmtLong(o.date)}</td>
+      <td><span class="pill"><i style="background:${st.color}"></i>${st.name}</span></td>
+      <td class="n">${eur(t.base)}</td><td class="n">${eur(t.iva)}</td><td class="n"><b>${eur(t.total)}</b></td>
+      <td>${fac}</td></tr>`;
+  }).join('') : '<tr><td colspan="10" class="empty">No hay pedidos con este filtro.</td></tr>';
+  const sum = k => round2(rows.reduce((s, r) => s + r.t[k], 0));
+  const nInv = rows.filter(r => r.o.facNo).length;
+  $('#tFoot').innerHTML = `<tr><td colspan="3">${rows.length} pedido${rows.length === 1 ? '' : 's'} · ${nInv} facturado${nInv === 1 ? '' : 's'}</td>
+    <td class="n">${rows.reduce((s, r) => s + r.units, 0)}</td><td colspan="2"></td>
+    <td class="n">${eur(sum('base'))}</td><td class="n">${eur(sum('iva'))}</td><td class="n">${eur(sum('total'))}</td><td></td></tr>`;
+  // Botón para facturar de una vez todos los pedidos entregados que aún no tienen factura
+  const pend = db.orders.filter(o => o.status === 'entregado' && !o.facNo).length;
+  $('#bulkInvoice').disabled = !pend;
+  $('#bulkInvoice').textContent = pend ? `🧾 Facturar entregados (${pend})` : '🧾 Todo lo entregado está facturado';
+}
+$('#tSearch').addEventListener('input', renderTable);
+$('#ordersTable').addEventListener('click', e => {
+  const f = e.target.closest('[data-tfilter]'), th = e.target.closest('th[data-sort]'), al = e.target.closest('[data-alb]');
+  if (f){ tableView.filter = f.dataset.tfilter; renderTable(); }
+  if (th){
+    tableView.dir = tableView.sort === th.dataset.sort ? -tableView.dir : 1;
+    tableView.sort = th.dataset.sort; renderTable();
+  }
+  if (al) openAlbaran(al.dataset.alb);
+});
+$('#bulkInvoice').addEventListener('click', () => {
+  const list = db.orders.filter(o => o.status === 'entregado' && !o.facNo).sort((a, b) => a.date.localeCompare(b.date));
+  if (!list.length) return;
+  if (!confirm(`Se emitirán ${list.length} factura${list.length === 1 ? '' : 's'}:\n\n${list.map(o => `${o.id} · ${o.client} · ${eur(totals(o).total)}`).join('\n')}\n\n¿Continuar?`)) return;
+  list.forEach(issueInvoice);
+  render();
+  toast(`${list.length} factura${list.length === 1 ? '' : 's'} emitida${list.length === 1 ? '' : 's'}: ${list[0].facNo}${list.length > 1 ? ' … ' + list[list.length - 1].facNo : ''}`);
+});
+
+function render(){ renderAlerts(); renderKpis(); renderStock(); renderBoard(); renderTable(); renderStats(); renderLog(); renderNav(); renderPreview(); save(); }
 
 /* ---------- Acciones ---------- */
 function moveOrder(id, toState){
@@ -707,6 +906,7 @@ function moveOrder(id, toState){
 
 function deleteOrder(id){
   const o = db.orders.find(o => o.id===id); if (!o) return;
+  if (o.facNo) return toast(`${o.id} está facturado (${o.facNo}): no se puede eliminar`);
   const restore = o.status==='pendiente';
   if (!confirm(`¿Eliminar ${o.id} de ${o.client}?${restore ? '\nEl material reservado volverá al inventario.' : ''}`)) return;
   if (restore){ const n = need(o.items); db.stock.planchas += n.planchas; db.stock.tempera += n.tempera; }
@@ -772,6 +972,7 @@ const editingOrder = () => editingId && db.orders.find(o => o.id===editingId);
 
 function startEdit(id){
   const o = db.orders.find(o => o.id===id); if (!o) return;
+  if (o.facNo) return toast(`${o.id} está facturado (${o.facNo}): no se puede modificar`);
   editingId = id;
   $('#fId').value = o.id; $('#fId').readOnly = true;
   $('#fDate').value = o.date; $('#fClient').value = o.client;
@@ -874,11 +1075,11 @@ $('#board').addEventListener('drop', e => { const c = e.target.closest('.col'); 
 $('#exportBtn').addEventListener('click', () => {
   const num = v => v.toFixed(2).replace('.', ',');
   // Una fila por cada kit del pedido; los totales del pedido solo en su primera fila (para poder sumarlos)
-  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Dto. volumen %','Importe línea','Base imponible pedido','IVA pedido','Total pedido','Entrega','Estado','Albarán','Planchas','Témperas','Notas']]
+  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Dto. volumen %','Importe línea','Base imponible pedido','IVA pedido','Total pedido','Entrega','Estado','Factura','Planchas','Témperas','Notas']]
     .concat(db.orders.flatMap(o => { const t = totals(o), c = o.cli || {}, st = STATES.find(s=>s.id===o.status).name;
       return o.items.map((l, i) => { const n = need([l]), first = i === 0;
         return [o.id,o.client,c.nif||'',c.phone||'',c.email||'',c.addr||'',c.cp||'',c.city||'',c.prov||'',KITS[l.kit].name,l.qty,num(l.price),l.disc||0,num(lineBase(l)),
-          first?num(t.base):'',first?num(t.iva):'',first?num(t.total):'',o.date,st,o.albNo||'',n.planchas,n.tempera,first?o.notes:'']; }); }));
+          first?num(t.base):'',first?num(t.iva):'',first?num(t.total):'',o.date,st,o.facNo||'',n.planchas,n.tempera,first?o.notes:'']; }); }));
   const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `pedidos-krafteo-${iso(new Date())}.csv`; a.click();
@@ -914,27 +1115,37 @@ $('#loginForm').addEventListener('submit', e => {
 });
 $('#logoutBtn').addEventListener('click', () => { closeAlbaran(); setAuth(null); $('#lUser').focus(); });
 
-/* ---------- Albarán de entrega ---------- */
+/* ---------- Factura (antes albarán de entrega) ---------- */
 const fmtLong = s => new Date(s+'T00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+const PAGO_DIAS = 30;   // vencimiento de la factura
+const dueDate = s => { const d = new Date(s+'T00:00'); d.setDate(d.getDate() + PAGO_DIAS); return iso(d); };
 const userName = u => (USERS.find(x => x.user===u) || {}).name || u || '—';
 const val = v => v ? esc(v) : '<span style="color:var(--k400)">—</span>';
 
+// Emite la factura de un pedido: número correlativo (serie F + año) que queda guardado en el pedido
+function issueInvoice(o){
+  if (o.facNo) return false;
+  o.facNo = `F-${new Date().getFullYear()}-${String(db.nextFac++).padStart(4,'0')}`;
+  o.facDate = iso(new Date());
+  o.facUser = currentUser;
+  log(`Factura ${o.facNo} emitida para ${o.id} (${o.client}) por ${userName(currentUser)} · ${eur(totals(o).total)}`);
+  return true;
+}
+
 let albOrderId = null;
+// Abre la factura del pedido. Si aún no tiene, la emite (si el pedido no está entregado, pide confirmación).
 function openAlbaran(id){
   const o = db.orders.find(o => o.id===id); if (!o) return;
   albOrderId = id;
-  if (o.status !== 'entregado') return toast('El albarán solo se genera para pedidos entregados');
-  if (!o.albNo){
-    // Primera vez: se asigna número correlativo y se guarda en el pedido
-    o.albNo = `ALB-${new Date().getFullYear()}-${String(db.nextAlb++).padStart(4,'0')}`;
-    o.albDate = iso(new Date());
-    o.albUser = currentUser;
-    log(`Albarán ${o.albNo} generado para ${o.id} (${o.client}) por ${userName(currentUser)}`);
+  if (!o.facNo){
+    if (o.status !== 'entregado' &&
+        !confirm(`${o.id} todavía no está entregado (${STATES.find(s => s.id===o.status).name}).\n¿Emitir la factura igualmente?\n\nUna vez facturado, el pedido ya no se podrá editar ni eliminar.`)) return;
+    issueInvoice(o);
     render();
   }
   const t = totals(o), c = o.cli || {};
   const cityLine = [c.cp, c.city].filter(Boolean).join(' ') + (c.prov ? ` (${c.prov})` : '');
-  $('#albBarTitle').textContent = `Albarán ${o.albNo} · ${o.client}`;
+  $('#albBarTitle').textContent = `Factura ${o.facNo} · ${o.client}`;
   const docHtml = (copy, cls) => `<article class="doc">
     <div class="d-copy ${cls}">${copy}</div>
     <div class="d-head">
@@ -943,11 +1154,11 @@ function openAlbaran(id){
         ${esc(EMPRESA.cp)} ${esc(EMPRESA.city)} (${esc(EMPRESA.prov)})<br>Tel. ${esc(EMPRESA.tel)} · ${esc(EMPRESA.email)}<br>${esc(EMPRESA.web)}</div>
     </div>
 
-    <div class="d-title"><h1>Albarán de entrega</h1><span class="no">Nº ${esc(o.albNo)}</span></div>
+    <div class="d-title"><h1>Factura</h1><span class="no">Nº ${esc(o.facNo)}</span></div>
 
     <div class="d-grid">
       <section class="d-box">
-        <h3>Cliente</h3>
+        <h3>Facturar a</h3>
         <div class="nm">${esc(o.client)}</div>
         <dl class="d-kv">
           <dt>NIF/CIF</dt><dd>${val(c.nif)}</dd>
@@ -959,14 +1170,14 @@ function openAlbaran(id){
         </dl>
       </section>
       <section class="d-box">
-        <h3>Datos de la entrega</h3>
+        <h3>Datos de la factura</h3>
         <dl class="d-kv">
-          <dt>Nº albarán</dt><dd>${esc(o.albNo)}</dd>
-          <dt>Fecha albarán</dt><dd>${fmtLong(o.albDate)}</dd>
+          <dt>Nº factura</dt><dd>${esc(o.facNo)}</dd>
+          <dt>Fecha factura</dt><dd>${fmtLong(o.facDate)}</dd>
+          <dt>Fecha operación</dt><dd>${fmtLong(o.date)} (entrega)</dd>
           <dt>Nº pedido</dt><dd>${esc(o.id)}</dd>
-          <dt>Fecha entrega</dt><dd>${fmtLong(o.date)}</dd>
-          <dt>Emitido por</dt><dd>${esc(userName(o.albUser))}</dd>
-          <dt>Forma de pago</dt><dd>Transferencia 30 días</dd>
+          <dt>Vencimiento</dt><dd>${fmtLong(dueDate(o.facDate))}</dd>
+          <dt>Emitida por</dt><dd>${esc(userName(o.facUser))}</dd>
         </dl>
       </section>
     </div>
@@ -991,8 +1202,7 @@ function openAlbaran(id){
           <thead><tr><th>Base imponible</th><th>Tipo IVA</th><th>Cuota IVA</th><th>Total</th></tr></thead>
           <tbody><tr><td>${eur(t.base)}</td><td>${IVA*100} %</td><td>${eur(t.iva)}</td><td>${eur(t.total)}</td></tr></tbody>
         </table>
-        <p class="d-obs"><b>Pago:</b> ${esc(EMPRESA.pago)}<br>
-          <b>Observaciones:</b> artículos fabricados en cartón kraft ondulado en el taller de Elda. La mercancía se entrega en perfecto estado. Cualquier incidencia debe comunicarse en un plazo de 48 h. Este albarán no sustituye a la factura.</p>
+        <p class="d-obs"><b>Observaciones:</b> artículos fabricados en cartón kraft ondulado en el taller de Elda.${o.notes ? ` ${esc(o.notes)}.` : ''}</p>
       </div>
       <div class="d-tot">
         <div><span>Base imponible</span><b>${eur(t.base)}</b></div>
@@ -1001,18 +1211,22 @@ function openAlbaran(id){
       </div>
     </div>
 
-    <div class="d-sign">
-      <section class="d-box"><h3>Entregado por</h3>${esc(EMPRESA.nombre)}<br>${esc(userName(o.albUser))}
-        <div class="line">Firma y sello</div></section>
-      <section class="d-box"><h3>Recibí conforme</h3>Nombre: ${c.contact ? esc(c.contact) : ''}<br>DNI:
-        <div class="line">Fecha y firma del cliente</div></section>
-    </div>
+    <section class="d-box d-pay">
+      <h3>Forma de pago</h3>
+      <dl class="d-kv">
+        <dt>Medio</dt><dd>Transferencia bancaria a ${PAGO_DIAS} días</dd>
+        <dt>IBAN</dt><dd>${esc(EMPRESA.iban)}</dd>
+        <dt>Vencimiento</dt><dd>${fmtLong(dueDate(o.facDate))}</dd>
+        <dt>Importe</dt><dd>${eur(t.total)}</dd>
+        <dt>Concepto</dt><dd>Factura ${esc(o.facNo)}</dd>
+      </dl>
+    </section>
 
     <div class="d-foot">${esc(EMPRESA.nombre)} · CIF ${esc(EMPRESA.cif)} · ${esc(EMPRESA.registro)}<br>
       De acuerdo con el RGPD (UE) 2016/679, sus datos se tratan para gestionar el pedido y no se cederán a terceros. Puede ejercer sus derechos en ${esc(EMPRESA.email)}.<br>
       <i>Documento de ejemplo para un proyecto académico: empresa y datos ficticios.</i></div></article>`;
-  // Dos ejemplares: uno para el cliente y otro para el archivo de la empresa (cada uno en su página al imprimir)
-  $('#albDoc').innerHTML = docHtml('Ejemplar para el cliente', 'cli') + docHtml('Ejemplar para la empresa', 'emp');
+  // Dos ejemplares: original para el cliente y copia para la contabilidad de la empresa (cada uno en su página al imprimir)
+  $('#albDoc').innerHTML = docHtml('Original · cliente', 'cli') + docHtml('Copia · empresa', 'emp');
   $('#albaran').hidden = false;
   $('#albaran').scrollTop = 0;
   document.body.style.overflow = 'hidden';
@@ -1044,7 +1258,7 @@ async function buildEmpresaPdf(){
   wrap.appendChild(clone); document.body.appendChild(wrap);
   const worker = html2pdf().set({
     margin: [12, 12, 12, 12],
-    filename: `${o.albNo}_empresa_${o.id}.pdf`,
+    filename: `Factura_${o.facNo}_copia-empresa.pdf`,
     image: { type:'jpeg', quality:0.96 },
     html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', scrollX:0, scrollY:0 },
     jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
@@ -1059,9 +1273,9 @@ $('#albPdf').addEventListener('click', async () => {
   try {
     job = await buildEmpresaPdf();
     await job.worker.save();
-    log(`PDF del albarán ${job.o.albNo} (ejemplar empresa) descargado por ${userName(currentUser)}`);
+    log(`PDF de la factura ${job.o.facNo} (copia empresa) descargado por ${userName(currentUser)}`);
     save(); renderLog();
-    toast(`Descargado ${job.o.albNo}_empresa_${job.o.id}.pdf`);
+    toast(`Descargada Factura_${job.o.facNo}_copia-empresa.pdf`);
   } catch (err) {
     toast(err.message || 'No se pudo generar el PDF');
   } finally {
@@ -1084,6 +1298,7 @@ $('#today').textContent = new Date().toLocaleDateString('es-ES',{weekday:'long',
 $('#filterKit').innerHTML += KIT_OPTIONS;
 $('#rItem').innerHTML = Object.entries(MATERIALS).map(([k,m]) => `<option value="${k}">${m.name}</option>`).join('');
 fillDefaults();
+showView(location.hash.slice(1));
 render();
 </script>
 </body>
