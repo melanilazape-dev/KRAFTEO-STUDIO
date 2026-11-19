@@ -1120,6 +1120,7 @@
         <div class="mx-auto grid h-20 w-20 place-items-center rounded-full bg-leaf-600 text-4xl text-white">✓</div>
         <h2 class="mt-5 font-display text-4xl font-extrabold">¡Pedido confirmado!</h2>
         <p class="mt-2 text-lg text-kraft-700">Gracias, <span id="dName"></span>. Ya estamos preparando la plancha de corte.</p>
+        <p id="dSync" class="mx-auto mt-3 hidden max-w-xl rounded-xl px-4 py-2 text-sm font-semibold" role="status" aria-live="polite"></p>
         <div class="mx-auto mt-8 grid max-w-xl gap-3 rounded-2xl bg-white p-6 text-left text-sm shadow-soft sm:grid-cols-2">
           <p><span class="block text-xs font-bold uppercase tracking-wider text-kraft-500">Nº de pedido</span><b id="dNum" class="text-lg"></b></p>
           <p><span class="block text-xs font-bold uppercase tracking-wider text-kraft-500">Fecha</span><b id="dDate" class="text-lg"></b></p>
@@ -1485,6 +1486,24 @@ const CATALOG = {                 // Precios de la presentación al inversor
   'Árbol de las 4 estaciones': 24.90,
   'Plancha despiezada': 12.90
 };
+/* Enlace con el panel del taller: cada pedido confirmado se guarda en Supabase (tabla pedidos_web).
+   La clave publicable solo permite AÑADIR pedidos; leerlos requiere el login del equipo en el panel. */
+const SUPABASE_URL = 'https://ynbkcuzrmibgjfzypluw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_e48J6H94hQKqiHHvngDK0Q_AJ4_541e';
+async function enviarPedidoAlTaller(pedido){
+  for (let intento = 0; intento < 3; intento++){
+    const res = await fetch(SUPABASE_URL + '/rest/v1/pedidos_web', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(pedido)
+    });
+    if (res.ok) return pedido.numero;
+    if (res.status !== 409) throw new Error('HTTP ' + res.status);
+    // Nº de pedido repetido: se genera otro y se reintenta
+    pedido.numero = 'KS-' + new Date().getFullYear() + '-' + String(Math.floor(100000 + Math.random()*900000));
+  }
+  throw new Error('No se pudo asignar un número de pedido');
+}
 const FREE_SHIP = 40, SHIP_COST = 4.95;   // Envío gratis a partir de 40 €
 const eur = n => n.toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
 const store = { get(){ try { return JSON.parse(localStorage.getItem('krafteoCart')) || []; } catch(e){ return []; } },
@@ -1626,6 +1645,24 @@ $('checkoutForm').addEventListener('submit', e=>{
   // JSON con la misma estructura que el prompt de extracción de pedidos
   const rows = cart.map(i=>({ numero_pedido:num, fecha, cliente:f.get('nombre').trim(), email:f.get('email').trim(), direccion, kit:i.name, cantidad:i.qty, total:eur(t.total) }));
   $('dJson').textContent = JSON.stringify(rows.length === 1 ? rows[0] : rows, null, 2);
+  // Enviar el pedido al panel del taller (Supabase)
+  const sync = $('dSync');
+  sync.className = 'mx-auto mt-3 max-w-xl rounded-xl bg-kraft-100 px-4 py-2 text-sm font-semibold text-kraft-700';
+  sync.textContent = '⏳ Enviando tu pedido al taller…';
+  enviarPedidoAlTaller({
+    numero: num, cliente: f.get('nombre').trim(), email: f.get('email').trim(), telefono: (f.get('tel')||'').trim() || null,
+    calle: f.get('calle').trim(), cp: f.get('cp'), ciudad: f.get('ciudad').trim(), provincia: f.get('provincia').trim(),
+    pago: f.get('pago'), items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+    subtotal: +t.sub.toFixed(2), descuento: +t.disc.toFixed(2), envio: +t.ship.toFixed(2), total: +t.total.toFixed(2)
+  }).then(n => {
+    $('dNum').textContent = n;
+    sync.className = 'mx-auto mt-3 max-w-xl rounded-xl bg-leaf-50 px-4 py-2 text-sm font-semibold text-leaf-700';
+    sync.textContent = '✂️ Pedido recibido en el taller de Elda: ya está en la cola de corte.';
+  }).catch(err => {
+    console.error('No se pudo enviar el pedido al taller:', err);
+    sync.className = 'mx-auto mt-3 max-w-xl rounded-xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700';
+    sync.textContent = '⚠️ No hemos podido avisar al taller automáticamente. Escríbenos con tu nº de pedido y lo tramitamos.';
+  });
   $('coForm').classList.add('hidden'); $('coDone').classList.remove('hidden');
   checkout.scrollTop = 0;
   cart = []; render(); e.target.reset();

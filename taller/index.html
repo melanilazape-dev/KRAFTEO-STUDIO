@@ -133,6 +133,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);ba
 .order.late{border-left-color:var(--red)}
 .order.soon{border-left-color:var(--sun)}
 .order .id{font-size:12px;color:var(--k600);font-weight:600}
+.web-chip{display:inline-block;margin-left:4px;padding:0 7px;border-radius:99px;background:#E0ECFF;color:#1D4ED8;font-size:11px;font-weight:700}
+.web-status{font-size:12px;color:var(--k600)}
+.web-status.ok{color:var(--leaf)}
+.web-status.err{color:var(--red);font-weight:600}
 .order .cli{font-weight:700;margin:2px 0}
 .order .meta{font-size:13px;color:var(--k700);line-height:1.5}
 .order .date{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--k100);margin-top:6px}
@@ -227,6 +231,32 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--k500);ba
 .pill i{width:8px;height:8px;border-radius:50%}
 .fac-link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--leaf);cursor:pointer;text-decoration:underline}
 .btn.xs{padding:4px 10px;font-size:12px}
+/* Cobro */
+.pay{display:inline-flex;flex-direction:column;vertical-align:middle;margin-right:8px;line-height:1.25}
+.pay small{color:var(--k600);font-size:11px;padding-left:14px}
+.pay.vencida .pill{color:var(--red)}
+.pay.vencida small{color:var(--red);font-weight:600}
+.pay.cobrada .pill{color:var(--leaf)}
+.link-sm{background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--k600);text-decoration:underline;cursor:pointer}
+.pay-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:2px 0 12px}
+.ps{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid var(--k200);background:#fff;cursor:pointer;font:inherit;color:var(--ink)}
+.ps:hover{border-color:var(--k400)}
+.ps[aria-pressed="true"]{outline:2px solid var(--k800);outline-offset:1px}
+.ps small{font-size:11.5px;font-weight:600;color:var(--k600);text-transform:uppercase;letter-spacing:.05em}
+.ps b{font-size:20px;font-variant-numeric:tabular-nums}
+.ps span{font-size:12px;color:var(--k600)}
+.ps.ok{border-left:5px solid var(--leaf)}
+.ps.wait{border-left:5px solid var(--sun)}
+.ps.bad{border-left:5px solid var(--red)}
+.ps.bad b{color:var(--red)}
+@media (max-width:700px){.pay-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.order .alb.vencida{color:var(--red)}
+.order .alb.pendiente{color:var(--k700)}
+.alert.money{background:#FFF4E5;border-color:#B54708;color:#B54708;animation:none}
+.alert.money .btn{background:#B54708;color:#fff}
+.d-stamp{position:absolute;top:150px;right:60px;transform:rotate(-12deg);border:4px solid var(--leaf);color:var(--leaf);border-radius:10px;padding:6px 16px;font-size:26px;font-weight:700;letter-spacing:.08em;text-align:center;line-height:1.1;opacity:.85;pointer-events:none}
+.d-stamp small{display:block;font-size:12px;letter-spacing:0;font-weight:600}
+.doc{position:relative}
 .otable .empty{text-align:center;color:var(--k600);padding:22px}
 
 /* Pantalla de acceso */
@@ -320,6 +350,8 @@ body:not(.auth) header,body:not(.auth) .shell{display:none}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--k900);color:var(--cream);padding:12px 18px;border-radius:12px;transition:transform .3s;z-index:9;max-width:90vw}
 .toast.on{transform:translateX(-50%) translateY(0)}
 </style>
+<!-- Cliente oficial de Supabase (login del equipo y pedidos de la tienda web) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
 <section id="login" class="grain">
@@ -329,12 +361,12 @@ body:not(.auth) header,body:not(.auth) .shell{display:none}
     <div class="login-body">
       <h1>Pedidos e inventario</h1>
       <p>Acceso para el equipo del taller de Elda</p>
-      <label for="lUser">Usuario</label>
-      <input id="lUser" required autocomplete="username">
+      <label for="lUser">Email</label>
+      <input id="lUser" type="email" required autocomplete="username">
       <label for="lPass">Contraseña</label>
       <input id="lPass" type="password" required autocomplete="current-password">
       <div class="login-err" id="loginErr" role="alert"></div>
-      <button class="btn full" type="submit" style="margin-top:6px">Entrar</button>
+      <button class="btn full" type="submit" style="margin-top:6px" id="loginBtn">Entrar</button>
     </div>
   </form>
 </section>
@@ -398,6 +430,9 @@ body:not(.auth) header,body:not(.auth) .shell{display:none}
               <input id="search" type="search" placeholder="Buscar cliente o nº pedido…">
               <select id="filterKit"><option value="">Todos los kits</option></select>
               <span class="muted">Arrastra las tarjetas o usa los botones para cambiar el estado.</span>
+              <span class="sp"></span>
+              <button type="button" class="btn ghost sm" id="webSyncBtn" title="Traer ahora los pedidos nuevos de la tienda web">🌐 Pedidos web</button>
+              <span id="webStatus" class="web-status" role="status" aria-live="polite"></span>
             </div>
             <div class="board" id="board"></div>
           </div>
@@ -413,18 +448,21 @@ body:not(.auth) header,body:not(.auth) .shell{display:none}
             <button type="button" data-tfilter="all" aria-pressed="true">Todos</button>
             <button type="button" data-tfilter="pending" aria-pressed="false">Sin facturar</button>
             <button type="button" data-tfilter="invoiced" aria-pressed="false">Facturados</button>
+            <button type="button" data-tfilter="unpaid" aria-pressed="false">Por cobrar</button>
+            <button type="button" data-tfilter="overdue" aria-pressed="false">Vencidas</button>
           </div>
           <span class="sp"></span>
           <button type="button" class="btn sm" id="bulkInvoice">🧾 Facturar entregados</button>
           <button type="button" class="btn ghost sm" id="exportBtn">⬇️ Descargar Excel</button>
         </div>
+        <div class="pay-sum" id="paySum" aria-label="Resumen de cobros"></div>
         <div class="tbl-wrap">
           <table class="otable">
             <thead><tr>
               <th data-sort="id">Pedido</th><th data-sort="client">Cliente</th><th>Productos</th>
               <th data-sort="units" class="n">Uds</th><th data-sort="date">Entrega</th><th data-sort="status">Estado</th>
               <th data-sort="base" class="n">Base</th><th data-sort="iva" class="n">IVA</th><th data-sort="total" class="n">Total</th>
-              <th data-sort="fac">Factura</th>
+              <th data-sort="fac">Factura</th><th data-sort="pay">Cobro</th>
             </tr></thead>
             <tbody id="tBody"></tbody>
             <tfoot id="tFoot"></tfoot>
@@ -509,7 +547,8 @@ const KITS = {
   arbol:     { name:'Árbol de las 4 estaciones',ref:'KIT-ARB', planchas:3,  tempera:3, price:27.50 },
   atrapasol: { name:'Atrapasoles de luz',       ref:'KIT-SOL', planchas:1,  tempera:1, price:12.90 },
   eventos:   { name:'Eventos',                  ref:'PRY-EVT', planchas:10, tempera:4, price:420.00 },
-  escenarios:{ name:'Escenarios',               ref:'PRY-ESC', planchas:15, tempera:6, price:860.00 }
+  escenarios:{ name:'Escenarios',               ref:'PRY-ESC', planchas:15, tempera:6, price:860.00 },
+  plancha:   { name:'Plancha despiezada',       ref:'PLA-DSP', planchas:1,  tempera:0, price:12.90 }
 };
 // Descuento por volumen POR PRODUCTO: se aplica a cada línea según su propia cantidad.
 // [desde N unidades, % de descuento]. Un kit puede tener tramos propios con «tiers» en KITS.
@@ -556,8 +595,31 @@ const fmtDate = s => new Date(s+'T00:00').toLocaleDateString('es-ES',{day:'2-dig
 const daysTo = s => Math.round((new Date(s+'T00:00') - new Date(iso(new Date())+'T00:00')) / 864e5);
 const now = () => new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 
+/* Cobro de facturas */
+const PAGO_DIAS = 30;   // vencimiento de la factura
+// Fecha de vencimiento (se calcula en hora local para que no se adelante un día por la zona horaria)
+const dueDate = s => {
+  const d = new Date(s+'T12:00'); d.setDate(d.getDate() + PAGO_DIAS);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+// Estado de cobro de un pedido: null (sin factura) · 'cobrada' · 'vencida' · 'pendiente'
+function payStatus(o){
+  if (!o.facNo) return null;
+  if (o.paid) return { id:'cobrada', label:'Cobrada', color:'#2D6A4F' };
+  const d = daysTo(dueDate(o.facDate));
+  return d < 0 ? { id:'vencida', label:'Vencida', color:'#B42318', days:-d }
+               : { id:'pendiente', label:'Pendiente de cobro', color:'#F2B84B', days:d };
+}
+
 // Pedidos de ejemplo (datos ficticios). d = días hasta la entrega.
+// fac = factura ya emitida: [nº, días desde la factura, días desde el cobro o null si no está cobrada]
 const SEED_ORDERS = [
+  { id:'KR-1040', client:'Escuela de Teatro La Farándula', kit:'escenarios', qty:1, more:[['eventos',1]], d:-22, status:'entregado', notes:'Decorado fin de curso',
+    fac:['F-2026-0001', -21, -6],
+    cli:{ nif:'G-03771845', phone:'966 31 22 09', addr:'C/ Dos de Mayo, 18', cp:'03600', city:'Elda', prov:'Alicante', email:'info@lafarandula-ficticio.es', contact:'Irene Sempere (dirección)' } },
+  { id:'KR-1039', client:'Librería Infantil Cuentacuentos', kit:'mariposa', qty:12, more:[['atrapasol',10]], d:-36, status:'entregado', notes:'Escaparate de otoño',
+    fac:['F-2026-0002', -35, null],
+    cli:{ nif:'B-03659128', phone:'965 38 70 14', addr:'C/ Nueva, 9', cp:'03600', city:'Elda', prov:'Alicante', email:'hola@cuentacuentos-ficticio.es', contact:'Andrés Payá' } },
   { id:'KR-1041', client:'CEIP Miguel Hernández', kit:'arbol', qty:25, more:[['atrapasol',6]], d:-1, status:'maquina', notes:'Aula de 5 años',
     cli:{ nif:'Q-5368014-H', phone:'965 39 87 10', addr:'Av. de Ronda, 23', cp:'03600', city:'Elda', prov:'Alicante', email:'secretaria@ceipmhernandez-ficticio.es', contact:'Rosa Albert (jefa de estudios)' } },
   { id:'KR-1042', client:'Laura Gómez Sánchez', kit:'loro', qty:1, d:2, status:'pendiente', notes:'Talla 4-6 años',
@@ -578,10 +640,12 @@ function seed(){
   return {
     next: 1048,
     stock: { planchas: 64, tempera: 22 },
-    nextFac: 1,
-    orders: SEED_ORDERS.map(({ kit, qty, more, d, ...o }) => ({
+    nextFac: 3,
+    orders: SEED_ORDERS.map(({ kit, qty, more, d, fac, ...o }) => ({
       ...o, cli:{ ...o.cli }, date: addDays(d),
-      items: [[kit, qty], ...(more || [])].map(([k, q]) => ({ kit:k, qty:q, price: KITS[k].price, disc: volDisc(k, q) }))
+      items: [[kit, qty], ...(more || [])].map(([k, q]) => ({ kit:k, qty:q, price: KITS[k].price, disc: volDisc(k, q) })),
+      ...(fac ? { facNo: fac[0], facDate: addDays(fac[1]), facUser:'taller',
+                  ...(fac[2] != null ? { paid: true, paidDate: addDays(fac[2]), paidUser:'melani' } : {}) } : {})
     })),
     log: [{ t: now(), m: 'Datos de ejemplo cargados' }]
   };
@@ -612,7 +676,8 @@ try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(
     }
     // Descuento por volumen por producto: se recalcula en los pedidos sin factura emitida.
     // Los que ya tienen factura conservan sus importes para no cambiar un documento emitido.
-    o.items.forEach(l => { l.disc = o.facNo ? (l.disc || 0) : volDisc(l.kit, l.qty); });
+    // (los pedidos de la web conservan el descuento que se aplicó en la tienda)
+    o.items.forEach(l => { l.disc = (o.facNo || o.origen === 'web') ? (l.disc || 0) : volDisc(l.kit, l.qty); });
   });
   if (dropped.length){
     // Un pedido que se queda sin ningún producto se elimina
@@ -627,8 +692,9 @@ const round2 = v => Math.round(v*100)/100;
 // Importe de una línea sin IVA, ya con el descuento por volumen (disc, en %) si lo tiene
 const lineBase = l => round2(l.price * l.qty * (1 - (l.disc || 0) / 100));
 const lineGross = l => round2(l.price * l.qty);
+// Base imponible = líneas de producto + gastos de envío (o.ship, sin IVA; lo traen los pedidos de la web)
 const totals = o => {
-  const base = round2(o.items.reduce((s, l) => s + lineBase(l), 0)), iva = round2(base*IVA);
+  const base = round2(o.items.reduce((s, l) => s + lineBase(l), 0) + (o.ship || 0)), iva = round2(base*IVA);
   return { base, iva, total: round2(base+iva) };
 };
 const unitsOf = o => o.items.reduce((s, l) => s + l.qty, 0);
@@ -654,8 +720,23 @@ function renderAlerts(){
     const label = k==='planchas' ? 'Stock bajo: pedir planchas de cartón a proveedor' : 'Stock bajo: pedir botes de témpera a proveedor';
     return `<div class="alert">⚠️ <span>${label} <small>(quedan ${db.stock[k]} ${m.unit}, mínimo ${m.min})</small></span><span class="sp"></span>
       <a class="btn red sm" style="text-decoration:none" href="mailto:${SUPPLIER_EMAIL}?subject=${subject}&body=${body}">Generar pedido de compra (${qty})</a></div>`;
-  }).join('');
+  }).join('') + overdueAlert();
 }
+// Aviso de facturas vencidas sin cobrar, con acceso directo al listado filtrado
+function overdueAlert(){
+  const v = db.orders.filter(o => (payStatus(o) || {}).id === 'vencida');
+  if (!v.length) return '';
+  const total = round2(v.reduce((s, o) => s + totals(o).total, 0));
+  return `<div class="alert money">💶 <span>${v.length} factura${v.length === 1 ? '' : 's'} vencida${v.length === 1 ? '' : 's'} sin cobrar: <b>${eur(total)}</b>
+    <small>(${v.map(o => o.facNo).join(', ')})</small></span><span class="sp"></span>
+    <button type="button" class="btn sm" data-goto-overdue>Ver facturas vencidas</button></div>`;
+}
+$('#alerts').addEventListener('click', e => {
+  if (!e.target.closest('[data-goto-overdue]')) return;
+  tableView.filter = 'overdue'; renderTable();
+  if (location.hash !== '#pedidos') location.hash = '#pedidos';
+  setTimeout(() => $('#ordersTable').scrollIntoView({ behavior:'smooth', block:'start' }), 60);
+});
 
 function renderKpis(){
   const active = db.orders.filter(o => o.status!=='entregado');
@@ -691,11 +772,12 @@ function cardHtml(o){
       ? `<span class="x lock" title="Facturado: no se puede editar ni eliminar">🔒</span>`
       : `<button class="x" title="Eliminar pedido" data-del="${o.id}">×</button>
     <button class="x ed" title="Editar pedido" data-edit="${o.id}">✎</button>`}
-    <div class="id">${esc(o.id)}</div>
+    <div class="id">${esc(o.id)}${o.origen === 'web' ? ` <span class="web-chip" title="Pedido de la tienda web ${esc(o.webNo || '')}">🌐 web</span>` : ''}</div>
     <div class="cli">${esc(o.client)}</div>
     <div class="meta"><ul class="items">${o.items.map(l => `<li>${l.qty} × ${esc(KITS[l.kit].name)}${l.disc ? ` <span class="disc">−${l.disc} %</span>` : ''}</li>`).join('')}</ul>${n.planchas} planchas · ${n.tempera} botes${o.notes?`<br><em>${esc(o.notes)}</em>`:''}
       <br><span class="money">${eur(totals(o).total)}</span> <small>(IVA incl.)</small></div>
-    <span class="date">${when}</span>${o.facNo ? `<span class="alb">🧾 ${esc(o.facNo)}</span>` : ''}
+    <span class="date">${when}</span>${o.facNo ? (p => `<span class="alb ${p.id}" title="${p.label}">🧾 ${esc(o.facNo)} · ${
+      p.id === 'cobrada' ? '✓ cobrada' : p.id === 'vencida' ? '⚠ vencida' : 'por cobrar'}</span>`)(payStatus(o)) : ''}
     ${done ? `<div class="acts"><button class="btn sm" data-alb="${o.id}">🧾 ${o.facNo ? 'Ver factura' : 'Emitir factura'}</button></div>` : ''}
     <div class="acts">
       ${i>0 ? `<button class="btn ghost sm" data-move="${o.id}" data-dir="-1">←</button>` : ''}
@@ -828,18 +910,71 @@ function renderNav(){
   $('#navInv').hidden = !low; $('#navInv').textContent = low ? '!' : '';
 }
 
+/* ---------- Cobro de facturas ---------- */
+// Celda «Cobro» del listado: estado + botón para marcar cobrada (o deshacer)
+function payCell(o){
+  const p = payStatus(o);
+  if (!p) return '<span class="muted">—</span>';
+  const info = p.id === 'cobrada' ? `el ${fmtLong(o.paidDate)}`
+             : p.id === 'vencida' ? `hace ${p.days} día${p.days === 1 ? '' : 's'}`
+             : p.days === 0 ? 'vence hoy' : `vence en ${p.days} día${p.days === 1 ? '' : 's'}`;
+  return `<span class="pay ${p.id}"><span class="pill"><i style="background:${p.color}"></i>${p.label}</span><small>${info}</small></span>
+    ${p.id === 'cobrada'
+      ? `<button type="button" class="link-sm" data-unpay="${o.id}" title="Deshacer el cobro">Deshacer</button>`
+      : `<button type="button" class="btn xs" data-pay="${o.id}">✓ Cobrada</button>`}`;
+}
+function markPaid(id){
+  const o = db.orders.find(o => o.id===id); if (!o || !o.facNo || o.paid) return;
+  o.paid = true; o.paidDate = iso(new Date()); o.paidUser = currentUser;
+  log(`Factura ${o.facNo} (${o.client}) cobrada · ${eur(totals(o).total)} · registrado por ${userName(currentUser)}`);
+  render(); toast(`Factura ${o.facNo} marcada como cobrada`);
+}
+function unmarkPaid(id){
+  const o = db.orders.find(o => o.id===id); if (!o || !o.paid) return;
+  if (!confirm(`¿Deshacer el cobro de la factura ${o.facNo}?\nVolverá a quedar pendiente de cobro.`)) return;
+  o.paid = false; delete o.paidDate; delete o.paidUser;
+  log(`Cobro de la factura ${o.facNo} anulado por ${userName(currentUser)}`);
+  render();
+}
+// Resumen encima del listado: facturado, cobrado, pendiente y vencido (de todas las facturas)
+function payTotals(){
+  const acc = { facturado:[0,0], cobrado:[0,0], pendiente:[0,0], vencido:[0,0] };
+  db.orders.forEach(o => { const p = payStatus(o); if (!p) return;
+    const t = totals(o).total, add = k => { acc[k][0]++; acc[k][1] = round2(acc[k][1] + t); };
+    add('facturado'); add(p.id === 'cobrada' ? 'cobrado' : p.id === 'vencida' ? 'vencido' : 'pendiente'); });
+  return acc;
+}
+function renderPaySummary(){
+  const a = payTotals();
+  const tile = (k, label, cls, filter) => `<button type="button" class="ps ${cls}" ${filter ? `data-tfilter="${filter}"` : ''}>
+    <small>${label}</small><b>${eur(a[k][1])}</b><span>${a[k][0]} factura${a[k][0] === 1 ? '' : 's'}</span></button>`;
+  $('#paySum').innerHTML = tile('facturado','Facturado','', 'invoiced') + tile('cobrado','Cobrado','ok','paid')
+    + tile('pendiente','Pendiente de cobro','wait','unpaid') + tile('vencido','Vencido','bad','overdue');
+}
+
 /* ---------- Listado de pedidos (tipo hoja de cálculo) ---------- */
 const tableView = { sort:'date', dir:1, filter:'all' };
 const STATE_ORDER = Object.fromEntries(STATES.map((s, i) => [s.id, i]));
 function tableRows(){
   const q = $('#tSearch').value.trim().toLowerCase();
   return db.orders
-    .filter(o => tableView.filter === 'all' || (tableView.filter === 'invoiced' ? !!o.facNo : !o.facNo))
+    .filter(o => {
+      const p = payStatus(o);
+      switch (tableView.filter){
+        case 'pending':  return !o.facNo;                       // sin facturar
+        case 'invoiced': return !!o.facNo;
+        case 'unpaid':   return p && p.id !== 'cobrada';        // facturas por cobrar (incluye vencidas)
+        case 'overdue':  return p && p.id === 'vencida';
+        case 'paid':     return p && p.id === 'cobrada';
+        default: return true;
+      }
+    })
     .filter(o => !q || `${o.id} ${o.client} ${o.facNo || ''} ${itemsLabel(o.items)}`.toLowerCase().includes(q))
     .map(o => ({ o, t: totals(o), units: unitsOf(o) }))
     .sort((a, b) => {
       const k = tableView.sort, v = r => ({ id:r.o.id, client:r.o.client.toLowerCase(), units:r.units, date:r.o.date,
-        status:STATE_ORDER[r.o.status], base:r.t.base, iva:r.t.iva, total:r.t.total, fac:r.o.facNo || '' })[k];
+        status:STATE_ORDER[r.o.status], base:r.t.base, iva:r.t.iva, total:r.t.total, fac:r.o.facNo || '',
+        pay:({ vencida:0, pendiente:1, cobrada:2 })[(payStatus(r.o) || {}).id] ?? 3 })[k];
       const x = v(a), y = v(b);
       return (x < y ? -1 : x > y ? 1 : 0) * tableView.dir || a.o.id.localeCompare(b.o.id);
     });
@@ -862,13 +997,14 @@ function renderTable(){
       <td class="n">${units}</td><td>${fmtLong(o.date)}</td>
       <td><span class="pill"><i style="background:${st.color}"></i>${st.name}</span></td>
       <td class="n">${eur(t.base)}</td><td class="n">${eur(t.iva)}</td><td class="n"><b>${eur(t.total)}</b></td>
-      <td>${fac}</td></tr>`;
-  }).join('') : '<tr><td colspan="10" class="empty">No hay pedidos con este filtro.</td></tr>';
+      <td>${fac}</td><td>${payCell(o)}</td></tr>`;
+  }).join('') : '<tr><td colspan="11" class="empty">No hay pedidos con este filtro.</td></tr>';
   const sum = k => round2(rows.reduce((s, r) => s + r.t[k], 0));
   const nInv = rows.filter(r => r.o.facNo).length;
   $('#tFoot').innerHTML = `<tr><td colspan="3">${rows.length} pedido${rows.length === 1 ? '' : 's'} · ${nInv} facturado${nInv === 1 ? '' : 's'}</td>
     <td class="n">${rows.reduce((s, r) => s + r.units, 0)}</td><td colspan="2"></td>
-    <td class="n">${eur(sum('base'))}</td><td class="n">${eur(sum('iva'))}</td><td class="n">${eur(sum('total'))}</td><td></td></tr>`;
+    <td class="n">${eur(sum('base'))}</td><td class="n">${eur(sum('iva'))}</td><td class="n">${eur(sum('total'))}</td><td colspan="2"></td></tr>`;
+  renderPaySummary();
   // Botón para facturar de una vez todos los pedidos entregados que aún no tienen factura
   const pend = db.orders.filter(o => o.status === 'entregado' && !o.facNo).length;
   $('#bulkInvoice').disabled = !pend;
@@ -883,6 +1019,9 @@ $('#ordersTable').addEventListener('click', e => {
     tableView.sort = th.dataset.sort; renderTable();
   }
   if (al) openAlbaran(al.dataset.alb);
+  const pay = e.target.closest('[data-pay]'), unpay = e.target.closest('[data-unpay]');
+  if (pay) markPaid(pay.dataset.pay);
+  if (unpay) unmarkPaid(unpay.dataset.unpay);
 });
 $('#bulkInvoice').addEventListener('click', () => {
   const list = db.orders.filter(o => o.status === 'entregado' && !o.facNo).sort((a, b) => a.date.localeCompare(b.date));
@@ -1075,51 +1214,136 @@ $('#board').addEventListener('drop', e => { const c = e.target.closest('.col'); 
 $('#exportBtn').addEventListener('click', () => {
   const num = v => v.toFixed(2).replace('.', ',');
   // Una fila por cada kit del pedido; los totales del pedido solo en su primera fila (para poder sumarlos)
-  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Dto. volumen %','Importe línea','Base imponible pedido','IVA pedido','Total pedido','Entrega','Estado','Factura','Planchas','Témperas','Notas']]
+  const rows = [['Pedido','Cliente','NIF/CIF','Teléfono','Email','Dirección','C.P.','Población','Provincia','Kit','Cantidad','Precio ud.','Dto. volumen %','Importe línea','Base imponible pedido','IVA pedido','Total pedido','Entrega','Estado','Factura','Fecha factura','Vencimiento','Estado cobro','Fecha cobro','Planchas','Témperas','Notas']]
     .concat(db.orders.flatMap(o => { const t = totals(o), c = o.cli || {}, st = STATES.find(s=>s.id===o.status).name;
       return o.items.map((l, i) => { const n = need([l]), first = i === 0;
         return [o.id,o.client,c.nif||'',c.phone||'',c.email||'',c.addr||'',c.cp||'',c.city||'',c.prov||'',KITS[l.kit].name,l.qty,num(l.price),l.disc||0,num(lineBase(l)),
-          first?num(t.base):'',first?num(t.iva):'',first?num(t.total):'',o.date,st,o.facNo||'',n.planchas,n.tempera,first?o.notes:'']; }); }));
+          first?num(t.base):'',first?num(t.iva):'',first?num(t.total):'',o.date,st,o.facNo||'',o.facDate||'',o.facNo?dueDate(o.facDate):'',(payStatus(o)||{}).label||'',o.paidDate||'',n.planchas,n.tempera,first?o.notes:'']; }); }));
   const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `pedidos-krafteo-${iso(new Date())}.csv`; a.click();
 });
 $('#resetBtn').addEventListener('click', () => { if (confirm('Se borrarán todos los cambios y se cargarán los datos de ejemplo.')){ db = seed(); stopEdit(); render(); } });
 
-/* ---------- Acceso ----------
-   Usuarios del taller. Es un acceso de demostración: el control se hace en el
-   navegador, así que no sustituye a un login real con servidor. */
-const USERS = [
-  { user:'taller',  pass:'krafteo2026', name:'Equipo de taller' },
-  { user:'melani',  pass:'elda2026',    name:'Melani' }
-];
-const AUTH_KEY = 'krafteo-taller-auth';
-let currentUser = null;
+/* ---------- Acceso (login real con Supabase Auth) ----------
+   Entra quien tenga usuario en Supabase Auth Y esté dado de alta en la tabla «equipo».
+   La clave publicable no da acceso a los pedidos: solo un usuario del equipo puede leerlos. */
+const SUPABASE_URL = 'https://ynbkcuzrmibgjfzypluw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_e48J6H94hQKqiHHvngDK0Q_AJ4_541e';
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let currentUser = null, memberName = null;
+// Nombres de usuarios de versiones anteriores del panel (aparecen en facturas e historial antiguos)
+const LEGACY_NAMES = { taller:'Equipo de taller', melani:'Melani' };
 function setAuth(user){
   currentUser = user;
   document.body.classList.toggle('auth', !!user);
-  try { user ? sessionStorage.setItem(AUTH_KEY, user) : sessionStorage.removeItem(AUTH_KEY); } catch {}
+  if (user) startWebSync(); else stopWebSync();
 }
-try { const u = sessionStorage.getItem(AUTH_KEY); if (u) setAuth(USERS.some(x => x.user===u) ? u : 'taller'); } catch {}
-if (!document.body.classList.contains('auth')) $('#lUser').focus();
-$('#loginForm').addEventListener('submit', e => {
+// Comprueba que el usuario con sesión pertenece al equipo; si no, cierra la sesión
+async function enterIfMember(session){
+  const { data, error } = await sb.from('equipo').select('nombre').eq('user_id', session.user.id).maybeSingle();
+  if (error || !data){ await sb.auth.signOut(); return false; }
+  memberName = data.nombre || session.user.email.split('@')[0];
+  setAuth(session.user.email);
+  return true;
+}
+(async () => {
+  if (!sb){ $('#loginErr').textContent = 'No se pudo cargar el sistema de acceso. Revisa la conexión a internet.'; return; }
+  const { data } = await sb.auth.getSession();
+  if (data.session) await enterIfMember(data.session);
+  if (!currentUser) $('#lUser').focus();
+})();
+$('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const u = $('#lUser').value.trim().toLowerCase(), p = $('#lPass').value;
-  if (USERS.some(x => x.user===u && x.pass===p)){
-    $('#loginErr').textContent = ''; e.target.reset(); setAuth(u);
-    log(`Inicio de sesión: ${u}`); render();
+  if (!sb) return;
+  const btn = $('#loginBtn'); btn.disabled = true; btn.textContent = 'Entrando…';
+  const email = $('#lUser').value.trim().toLowerCase(), password = $('#lPass').value;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  let ok = false;
+  if (!error && data.session) ok = await enterIfMember(data.session);
+  btn.disabled = false; btn.textContent = 'Entrar';
+  if (ok){
+    $('#loginErr').textContent = ''; e.target.reset();
+    log(`Inicio de sesión: ${userName(currentUser)}`); render();
   } else {
-    $('#loginErr').textContent = 'Usuario o contraseña incorrectos.';
+    $('#loginErr').textContent = error ? 'Email o contraseña incorrectos.' : 'Este usuario no tiene acceso al panel del taller.';
     $('#lPass').value = ''; $('#lPass').focus();
   }
 });
-$('#logoutBtn').addEventListener('click', () => { closeAlbaran(); setAuth(null); $('#lUser').focus(); });
+$('#logoutBtn').addEventListener('click', async () => { closeAlbaran(); setAuth(null); memberName = null; if (sb) await sb.auth.signOut(); $('#lUser').focus(); });
+$('#webSyncBtn').addEventListener('click', () => syncWebOrders(true));
+// Al volver a la pestaña se comprueba enseguida si hay pedidos nuevos
+document.addEventListener('visibilitychange', () => { if (!document.hidden && currentUser) syncWebOrders(); });
+
+/* ---------- Pedidos de la tienda web → tablero ----------
+   Cada 30 s (y al pulsar «Pedidos web») se leen de Supabase los pedidos nuevos de la tienda,
+   se pasan al tablero en «Pendiente de corte» y se marcan como importados. */
+const KIT_BY_NAME = Object.fromEntries(Object.entries(KITS).map(([k, v]) => [v.name.toLowerCase(), k]));
+const WEB_ENTREGA_DIAS = 5;                // la tienda promete entrega en 5 días
+let webTimer = null, webBusy = false;
+function startWebSync(){ stopWebSync(); syncWebOrders(); webTimer = setInterval(syncWebOrders, 30000); }
+function stopWebSync(){ clearInterval(webTimer); webTimer = null; }
+function setWebStatus(text, cls = ''){ const s = $('#webStatus'); if (s){ s.textContent = text; s.className = 'web-status ' + cls; } }
+
+// Convierte un pedido de la tienda (precios con IVA) en un pedido del panel (precios sin IVA)
+function webToOrder(w){
+  const unknown = [];
+  const pct = w.subtotal > 0 ? Math.round(w.descuento / w.subtotal * 100) : 0;
+  const items = (w.items || []).flatMap(i => {
+    const kit = KIT_BY_NAME[String(i.name).toLowerCase()];
+    if (!kit){ unknown.push(`${i.qty} × ${i.name}`); return []; }
+    // Precio sin IVA con 4 decimales para que el total de la factura coincida con lo que pagó el cliente
+    return [{ kit, qty: Math.max(1, parseInt(i.qty, 10) || 1), price: Math.round(Number(i.price) / (1 + IVA) * 10000) / 10000, disc: pct }];
+  });
+  const d = new Date(w.creado_at); d.setDate(d.getDate() + WEB_ENTREGA_DIAS);
+  const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return {
+    id: 'KR-' + db.next, client: w.cliente, items, date, status:'pendiente', origen:'web', webNo: w.numero,
+    ship: Math.round(Number(w.envio || 0) / (1 + IVA) * 10000) / 10000,
+    notes: [`Pedido web ${w.numero}`, w.pago ? `pago ${w.pago}` : '', pct ? `dto. tienda −${pct} %` : '',
+            unknown.length ? `⚠ productos no reconocidos: ${unknown.join(', ')}` : ''].filter(Boolean).join(' · '),
+    cli: { nif:'', phone: w.telefono || '', addr: w.calle, cp: w.cp, city: w.ciudad, prov: w.provincia, email: w.email, contact: w.cliente }
+  };
+}
+async function syncWebOrders(manual){
+  if (!sb || !currentUser || webBusy) return;
+  webBusy = true; setWebStatus('Comprobando pedidos web…');
+  try {
+    const { data, error } = await sb.from('pedidos_web').select('*').is('importado_at', null).order('creado_at');
+    if (error) throw error;
+    const nuevos = [];
+    for (const w of data){
+      const o = webToOrder(w);
+      if (!o.items.length) continue;
+      // Se «reserva» el pedido en la base de datos antes de añadirlo, para que no se importe dos veces
+      const { data: claimed, error: e2 } = await sb.from('pedidos_web')
+        .update({ importado_at: new Date().toISOString(), importado_por: currentUser, pedido_panel: o.id })
+        .eq('id', w.id).is('importado_at', null).select('id');
+      if (e2) throw e2;
+      if (!claimed.length) continue;
+      db.next++;
+      const n = need(o.items);
+      db.stock.planchas -= n.planchas; db.stock.tempera -= n.tempera;
+      db.orders.push(o); nuevos.push(o);
+      log(`🌐 Pedido web ${o.webNo} de ${o.client} → ${o.id}: ${itemsLabel(o.items)} (−${n.planchas} planchas, −${n.tempera} botes)`
+        + (db.stock.planchas < 0 || db.stock.tempera < 0 ? ' · ⚠ stock insuficiente' : ''));
+    }
+    if (nuevos.length){
+      render();
+      toast(nuevos.length === 1 ? `🌐 Nuevo pedido web: ${nuevos[0].client} (${nuevos[0].id})` : `🌐 ${nuevos.length} pedidos web nuevos en el tablero`);
+    }
+    const hora = new Date().toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+    setWebStatus(nuevos.length ? `${nuevos.length} nuevo${nuevos.length === 1 ? '' : 's'} · ${hora}` : `Al día · ${hora}`, 'ok');
+  } catch (err) {
+    console.error('Pedidos web:', err);
+    setWebStatus('Sin conexión con la tienda', 'err');
+    if (manual) toast('No se pudieron leer los pedidos de la web');
+  } finally { webBusy = false; }
+}
 
 /* ---------- Factura (antes albarán de entrega) ---------- */
 const fmtLong = s => new Date(s+'T00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
-const PAGO_DIAS = 30;   // vencimiento de la factura
-const dueDate = s => { const d = new Date(s+'T00:00'); d.setDate(d.getDate() + PAGO_DIAS); return iso(d); };
-const userName = u => (USERS.find(x => x.user===u) || {}).name || u || '—';
+const userName = u => LEGACY_NAMES[u] || (u && u === currentUser && memberName) || (u ? String(u).split('@')[0] : '—');
 const val = v => v ? esc(v) : '<span style="color:var(--k400)">—</span>';
 
 // Emite la factura de un pedido: número correlativo (serie F + año) que queda guardado en el pedido
@@ -1148,6 +1372,7 @@ function openAlbaran(id){
   $('#albBarTitle').textContent = `Factura ${o.facNo} · ${o.client}`;
   const docHtml = (copy, cls) => `<article class="doc">
     <div class="d-copy ${cls}">${copy}</div>
+    ${o.paid ? `<div class="d-stamp" aria-label="Factura pagada">PAGADA<small>${fmtLong(o.paidDate)}</small></div>` : ''}
     <div class="d-head">
       <img class="d-logo" src="logo-krafteo.webp" alt="Krafteo Studio">
       <div class="d-emp"><b>${esc(EMPRESA.nombre)}</b><br>CIF ${esc(EMPRESA.cif)}<br>${esc(EMPRESA.dir)}<br>
@@ -1191,7 +1416,8 @@ function openAlbaran(id){
         <td class="n">${eur(l.price)}</td>
         <td class="n">${l.disc ? `${l.disc} %` : '—'}</td>
         <td class="n"><b>${eur(lineBase(l))}</b></td>
-      </tr>`; }).join('')}</tbody>
+      </tr>`; }).join('')}${o.ship ? `<tr><td>ENV</td><td><b>Gastos de envío</b></td><td class="n">1</td>
+        <td class="n">${eur(o.ship)}</td><td class="n">—</td><td class="n"><b>${eur(o.ship)}</b></td></tr>` : ''}</tbody>
       <tfoot><tr><td colspan="3"><small>${o.items.length} ${o.items.length === 1 ? 'referencia' : 'referencias'} · ${unitsOf(o)} unidades${o.notes ? ` · Notas: ${esc(o.notes)}` : ''}</small></td>
         <td colspan="2" class="n"><small>Suma de importes</small></td><td class="n"><b>${eur(t.base)}</b></td></tr></tfoot>
     </table>
